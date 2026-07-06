@@ -41,6 +41,8 @@ A Fase 3 original escalona pra Sonnet só quando o Haiku volta com `<final_answe
 - Regra de escalonamento (Fase 3): escalona pra `fast-context-deep` quando `confidence != high` **ou** `files_found` parecer baixo pro escopo da pergunta — não só quando vier vazio.
 - Calibração ao longo do tempo: o harness da Fase 7 registra confiança reportada vs. corretude real (contra o gabarito manual) — transforma "confiança" de vibe em sinal calibrado, e expõe se o subagent está super ou subconfiante.
 
+**Atualização (pesquisa externa, ver `claude-code-capabilities-verified.md`)**: pesquisa em calibração de LLM confirma que confiança verbalizada tem viés estrutural de excesso de confiança e não pode ser lida como probabilidade — mas é válida como **sinal de ranking** (que é o uso que fazemos: decidir escalar ou não, não estimar uma probabilidade exata). Mitigação barata sem precisar de ensemble/RL: quando o subagent for reportar `confidence` abaixo de `high`, forçar uma segunda passada de auto-crítica antes de finalizar (técnica tipo reflection/UAR). Isso reduz o problema, não o elimina — ver risco #8 abaixo.
+
 ## 4. Limite de turnos e caps de saída são só instrução, sem enforcement de código
 
 Diferente do `--max-turns` da CLI Python (corte real no loop), no subagent nativo isso é só um pedido no system prompt — o modelo pode não obedecer, do mesmo jeito que a ativação implícita de skill "não é garantida". É o mesmo tipo de risco estrutural, aplicado agora ao limite de turnos.
@@ -51,6 +53,8 @@ Diferente do `--max-turns` da CLI Python (corte real no loop), no subagent nativ
 - **Camada 1 (sempre)**: auto-contagem no próprio raciocínio do subagent — "declare seu turno atual (Turno N/8); ao chegar no 8, você DEVE emitir `<final_answer>` mesmo que incompleto, com `confidence="low"`". Soft, mas combinado com o formato estruturado do risco #3 pelo menos produz um sinal honesto de "parei sem terminar" em vez de silenciosamente continuar.
 - **Camada 2 (backstop real, a verificar antes de implementar)**: Claude Code tem hooks `PreToolUse` que **bloqueiam de verdade** uma tool call (`hookSpecificOutput.permissionDecision: "deny"`), diferente de pedir no system prompt. Um hook em `Read|Grep|Glob` poderia contar invocações num contador temporário e, passado o limite, negar com "limite de turnos atingido, finalize agora". Pré-requisito a confirmar: se o payload do hook identifica *qual agente* (main vs. subagent) disparou a chamada — senão o contador bloquearia também o agente principal usando essas mesmas ferramentas. Verificável com o mesmo método de captura de debug usado pro statusLine.
 - Recomendação: implementar a Camada 1 já na Fase 1; só investir na Camada 2 se a Fase 7 mostrar que a auto-contagem não é confiável na prática.
+
+**Atualização (pesquisa externa, ver `claude-code-capabilities-verified.md`)**: existe de fato um campo nativo `maxTurns` no frontmatter de subagent — mas a [issue #41143](https://github.com/anthropics/claude-code/issues/41143) no repositório oficial confirma que **não é enforced na prática** (agent com `maxTurns: 10` rodou 72+ turnos). Configurar o campo mesmo assim (grátis, pode ser corrigido numa versão futura), mas continuar tratando a auto-contagem comportamental (Camada 1) como o mecanismo real, não o `maxTurns`. Sobre a Camada 2: também descobri que `hooks` pode ser definido **por-agent** direto no frontmatter do `fast-context.md` — isso resolve o pré-requisito de identificação (não precisa mais inspecionar o payload pra saber "qual agente disparou", porque o hook já vive escopado dentro da definição do subagent).
 
 ## 5. Prompt caching pode não se aplicar do jeito assumido
 
@@ -73,3 +77,53 @@ A Fase 5 original assume que o cache automático do Claude Code beneficia o syst
 - Mistura proposital: queries que **deveriam** disparar o fast-context (multi-arquivo) e queries que **não deveriam** (triviais) — valida o risco #1 (over-triggering) ao mesmo tempo que valida a qualidade da busca.
 - Métricas por rodada: tokens (main + subagent), tempo, precisão/recall contra o gabarito, `confidence` reportado vs. corretude real (calibração do risco #3), se o limite de turnos segurou (risco #4), se a 2ª chamada mostrou cache hit (risco #5).
 - Tabela de resultados datada no mesmo arquivo — cada rodada futura (depois de mexer no system prompt) vira uma linha nova comparável, não uma impressão solta.
+
+## 7. Grounding por citação literal não garante correção semântica
+
+Exigir um trecho verbatim (risco #2) prova que o subagent leu o arquivo de verdade — mas não prova que ele interpretou certo o que aquele trecho faz, ou que escolheu o trecho realmente relevante pra pergunta, não só um trecho tecnicamente correto que satisfaz o formato.
+
+**Status: sem solução completa.** Mitigação parcial: exigir também uma frase curta conectando o trecho à pergunta ("este trecho resolve X porque Y") — não elimina o problema, mas força uma justificativa explícita que pode ser auditada pelo agente principal ou por revisão humana.
+
+## 8. Confiança autorrelatada não tem calibração externa
+
+Mesmo com o formato estruturado do risco #3, nada impede o subagent de sempre reportar `confidence="high"` — viés de excesso de confiança é um padrão documentado em LLMs (ver `claude-code-capabilities-verified.md`), não um bug específico deste projeto.
+
+**Status: mitigado, não resolvido.** A técnica de reflection (forçar segunda passada de auto-crítica quando reportar não-`high`) reduz o problema. Resolução completa exigiria ensemble de múltiplos modelos ou RL de calibração — fora de escopo (custo/infra incompatível com "100% nativo, sem infra externa").
+
+## 9. Sem teto para o escalonamento entre fast-context e fast-context-deep
+
+Se `fast-context-deep` (Sonnet) também voltar com confiança baixa/média, o plano original não definia um limite — risco de ping-pong entre os dois agents gastando mais tokens do que se tivesse ido direto pro modelo forte.
+
+**Status: mitigável por regra simples.** Limitar a 1 salto: Haiku → Sonnet uma vez. Se o Sonnet também não voltar com `confidence="high"`, parar e devolver pro agente principal com aviso explícito de baixa confiança, sem re-escalonar de novo.
+
+## 10. Duplicação de system prompt entre dois arquivos de agent
+
+`fast-context.md` e `fast-context-deep.md` compartilham o mesmo corpo de instruções, diferindo só no `model:`. Qualquer ajuste futuro no system prompt precisa ser replicado manualmente nos dois — risco real de divergência silenciosa.
+
+**Status: mitigado por processo, não eliminado.** Não há mecanismo de import entre arquivos de agent no Claude Code. Mitigação: cabeçalho de aviso em ambos os arquivos ("manter corpo idêntico ao outro, exceto `model:`") e checagem de sincronia como item de checklist na Fase 7.
+
+## 11. Amostra do harness de avaliação é pequena e de um repositório só
+
+5-6 queries contra um único repositório não generaliza pra outros projetos, linguagens ou convenções de nome. O próprio gabarito manual é feito por nós olhando o repo uma vez — pode estar incompleto sem a gente perceber.
+
+**Status: aceito como limitação, não resolvido.** Documentar o harness como "smoke test" de sanidade, não como prova de generalização. Expandir a amostra é trabalho futuro, fora do escopo da Fase 7 inicial.
+
+## 12. Diretórios ruidosos no grep (`node_modules`, `dist`, `.venv`) — RESOLVIDO
+
+**Status: resolvido por padrão, sem trabalho extra.** O Grep do Claude Code é baseado em ripgrep, que respeita `.gitignore` automaticamente (ver `claude-code-capabilities-verified.md`). Resta só instruir exclusão explícita de código vendorizado/gerado que tenha sido commitado (não gitignored).
+
+## 13. Vazamento de segredos pro subagent (`.env`, credenciais) — RESOLVIDO (solução conhecida)
+
+**Status: solução documentada e verificada, falta só implementar.** Hook `PreToolUse` em `Read|Edit|Write|Bash` que nega (`exit code 2`) quando o path bate com `.env`/`secrets/**`, complementado por uma regra `deny` determinística em `settings.json`. Ver `claude-code-capabilities-verified.md` para os detalhes e fontes. Deve ser aplicado em `settings.json` (protege agente principal e `fast-context` ao mesmo tempo).
+
+## 14. Sem kill-switch documentado
+
+Se a Fase 7 mostrar que o `fast-context` piora os resultados, não havia um jeito único e limpo de desligar tudo sem deixar referência quebrada espalhada (ex: regra no `CLAUDE.md` mencionando um agent que foi removido).
+
+**Status: mitigável por organização de arquivos.** Concentrar toda referência ao `fast-context` numa única regra dedicada (`.claude/rules/exploration.md`), nunca espalhada direto no `CLAUDE.md`. Desligar vira "apagar/renomear 2 arquivos" (a regra + os agents), sem procurar referências soltas.
+
+## 15. Re-disparo de delegação em perguntas de follow-up
+
+Se o usuário pergunta algo que já foi respondido por uma citação anterior na mesma sessão, o gate de auto-checagem do risco #1 deveria pegar isso, mas nunca foi pensado especificamente pra esse cenário.
+
+**Status: mitigável, ainda não testado.** Estender o gate de auto-checagem com "eu já respondi isso nesta conversa?", além de "eu já sei o arquivo:linha exato?". Incluir um caso de teste de follow-up no harness da Fase 7 (risco #6) pra validar na prática.

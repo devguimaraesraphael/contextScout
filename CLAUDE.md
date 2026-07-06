@@ -22,6 +22,8 @@ Decisão de arquitetura (só Claude, sem infra externa, tudo nativo do Claude Co
 
 Plano de implementação passo a passo (fases 1-7, com checklist): ver `docs/ai/implementation-plan.md`. Pesquisa de feedback visual (statusLine/subagentStatusLine): ver `docs/ai/ui-feedback-statuslines.md`.
 
+Riscos e lacunas identificados (15 no total, com solução ou status de mitigação): ver `docs/ai/risks-and-gaps.md`. Fatos confirmados sobre a plataforma (schema de agent, bug do `maxTurns`, payload de statusLine, proteção de segredos): ver `docs/ai/claude-code-capabilities-verified.md`.
+
 ## Regras
 
 - Sem segredos/credenciais em nenhum arquivo commitado.
