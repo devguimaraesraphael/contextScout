@@ -63,6 +63,23 @@ A cheap, fast search intern who scouts the code before the expensive
 assistant has to do it itself — and only hands back the exact page, already
 highlighted.
 
+### How to install
+
+No terminal commands needed — just three steps:
+
+1. **Download this repository** — click the green **Code** button at the top
+   of this page, then **Download ZIP**, and unzip it anywhere on your
+   computer.
+2. **Copy the `.claude` folder** from inside the unzipped folder into the
+   root folder of your own project (the same place where your project's
+   other files live).
+3. **Open (or restart) Claude Code in your project** and start using it
+   normally — ContextScout is now active in the background.
+
+Already have a `.claude` folder in your project? Don't overwrite it — ask a
+programmer on your team to merge the two (see
+[For programmers](#for-programmers)).
+
 ### How to use it
 
 You don't need to learn a special way of asking — just ask your question
