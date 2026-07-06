@@ -10,7 +10,7 @@
 [![No infrastructure](https://img.shields.io/badge/infrastructure-none-2ea44f?style=flat-square)]()
 [![Status](https://img.shields.io/badge/status-active-brightgreen?style=flat-square)]()
 
-**[📖 Interactive visual guide (7 languages)](https://claude.ai/code/artifact/9137bdb0-7f16-4b9a-b62b-dec7a4b28fb6)** · [What it is](#what-it-is) · [Install](#install) · [For non-programmers](#for-non-programmers) · [For programmers](#for-programmers)
+[What it is](#what-it-is) · [Install](#install) · [For non-programmers](#for-non-programmers) · [For programmers](#for-programmers)
 
 </div>
 
@@ -75,11 +75,6 @@ naturally. Two ways it triggers:
 
 Noticing whether a question is too broad and needs to be split into smaller
 pieces is the main assistant's job, not yours.
-
-📖 For the full walkthrough — flow diagram, good/bad question examples, and
-the honest "what you can trust vs. what needs care" list — see the
-**[interactive visual guide](https://claude.ai/code/artifact/9137bdb0-7f16-4b9a-b62b-dec7a4b28fb6)**
-linked at the top of this README.
 
 ---
 
