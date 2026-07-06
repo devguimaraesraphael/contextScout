@@ -33,3 +33,16 @@ Antes de invocar `fast-context`, pergunte-se explicitamente:
 Antes de editar em cima de uma citação recebida do `fast-context`, sempre fazer
 uma leitura rápida (Read) de pelo menos uma das citações pra confirmar que
 o trecho existe e bate com o esperado — não confiar 100% no grounding do subagent.
+
+## Escalonamento de modelo (risco #3, #9, #10)
+
+Se o `<final_answer>` do `fast-context` (Haiku) vier com `confidence` diferente de
+`"high"`, **ou** com `files_found` que pareça baixo pro escopo da pergunta (não só
+quando vier vazio — esse é o caso fácil, não o mais perigoso), escalone **uma única
+vez** pra `fast-context-deep` (mesmo tools/system prompt, `model: sonnet`) com a
+mesma pergunta original.
+
+Teto de escalonamento: no máximo 1 salto. Se `fast-context-deep` também voltar com
+`confidence != "high"`, pare — não escalone de novo, não repita. Devolva a resposta
+pro fluxo principal com aviso explícito de baixa confiança pro usuário, em vez de
+insistir num loop caro.

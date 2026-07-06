@@ -7,8 +7,13 @@ docs/ai/go-no-go-analysis.md, "Rodada 2", achado #2). Este hook conta de verdade
 chamadas de Read/Grep/Glob por invocacao do subagent e nega a partir do limite,
 devolvendo uma instrucao pro modelo finalizar.
 
-Chave de contagem: transcript_path recebido no payload do hook, que e unico por
-invocacao de subagent (nao o session_id, compartilhado com a sessao principal).
+Chave de contagem: agent_id recebido no payload do hook. Confirmado empiricamente
+(rodada 4, ver docs/ai/go-no-go-analysis.md) que transcript_path e session_id sao
+o MESMO valor da sessao principal em toda chamada de subagent dentro da sessao —
+usar qualquer um dos dois faz o contador vazar entre invocacoes distintas do
+fast-context na mesma sessao, cortando cada vez mais cedo a cada chamada nova.
+agent_id, por outro lado, e unico por invocacao (bate com o agentId devolvido
+pela ferramenta Agent).
 
 Uso: configurado no frontmatter `hooks.PreToolUse` do fast-context.md, matcher
 "Read|Grep|Glob". Recebe o payload JSON do hook via stdin.
@@ -44,7 +49,7 @@ def main():
     except json.JSONDecodeError:
         sys.exit(0)
 
-    key_source = payload.get("transcript_path") or payload.get("session_id") or ""
+    key_source = payload.get("agent_id") or payload.get("transcript_path") or payload.get("session_id") or ""
     if not key_source:
         sys.exit(0)
 

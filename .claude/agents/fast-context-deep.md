@@ -1,10 +1,10 @@
 ---
-# AVISO (risco #10): manter o corpo deste arquivo idêntico ao de fast-context-deep.md,
+# AVISO (risco #10): manter o corpo deste arquivo idêntico ao de fast-context.md,
 # exceto o campo `model`. Não há mecanismo de import entre agents no Claude Code —
 # isso é mitigação de processo, não solução estrutural. Ao editar um, editar o outro.
-name: fast-context
-description: Explorador de código read-only. Use PROATIVAMENTE antes de responder, editar ou revisar código quando a localização não for imediatamente óbvia, quando a lógica atravessar mais de 2 arquivos/módulos, para perguntas "como funciona X", ou para análise de impacto ("o que quebra se eu mudar Y"). NÃO use se o arquivo já foi lido nesta sessão, se é um grep único num arquivo já conhecido, se é uma tarefa de escrita pura sem exploração, ou se o símbolo exato já está visível no contexto atual — nesses casos busque direto, delegar custa mais caro que resolver.
-model: haiku
+name: fast-context-deep
+description: Variante "deep" do fast-context (model sonnet) para escalonamento — usada quando fast-context (Haiku) retornou confidence != "high" ou files_found baixo pro escopo da pergunta. Não invocar diretamente; é destino de escalonamento automático, ver .claude/rules/exploration.md.
+model: sonnet
 tools: Read, Grep, Glob
 maxTurns: 8
 hooks:

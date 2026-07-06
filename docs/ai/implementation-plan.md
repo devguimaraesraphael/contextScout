@@ -61,14 +61,15 @@ Docs de referência para cada fase:
 - [x] **(resolvido — risco #13)** `.claude/scripts/block_secrets_hook.py` + `hooks.PreToolUse` (`Read|Edit|Write|Bash`) em `settings.json`, mais `deny` determinístico (`Read(./.env)`, `Read(./.env.*)`, `Read(./secrets/**)`). Testado com 7 casos sintéticos (arquivo/comando, positivo/negativo, incluindo falso-positivo `environment.md`/`enviar.envelope`) — todos corretos. Bug real encontrado e corrigido durante o teste: regex original só batia `.env`/`secrets/` no início da string ou após `/`, não após espaço — comandos Bash como `cat .env` (espaço antes do path) passavam batido. Corrigido pra `(^|[\s/])`.
 - [x] **(solução robusta — risco #14)** Toda referência ao `fast-context` concentrada em `.claude/rules/exploration.md`, incluindo a nota de kill-switch (apagar/renomear `.claude/agents/fast-context.md`).
 
-## Fase 3 — Escalonamento de modelo
+## Fase 3 — Escalonamento de modelo ✅ implementada (achou e corrigiu bug real no hook — ver rodada 4)
 
 **Objetivo:** reforçar a estratégia #1 sem travar num único modelo fixo.
 
-- [ ] Definir uma segunda variante do agent (ex: `fast-context-deep` com `model: sonnet`, mesmo tools/system prompt) para repositórios grandes/complexos. **(risco #10)** Adicionar cabeçalho de aviso nos dois arquivos: "manter corpo idêntico ao outro, exceto `model:`" — não há mecanismo de import entre agents no Claude Code, então isso é mitigação de processo, não solução estrutural.
-- [ ] **(solução robusta — risco #3)** Regra de escalonamento baseada no formato estruturado da Fase 1: escalona pra `fast-context-deep` quando `confidence != "high"` **ou** `files_found` parecer baixo pro escopo da pergunta — não só quando `<final_answer>` vier vazio, que é o caso mais fácil de detectar mas não o mais perigoso.
-- [ ] **(solução robusta — risco #9)** Teto de escalonamento: no máximo 1 salto (Haiku → Sonnet uma vez). Se `fast-context-deep` também voltar com `confidence != "high"`, parar e devolver pro agente principal com aviso explícito de baixa confiança — sem re-escalonar de novo, sem loop.
-- [ ] Calibração ao longo do tempo: a Fase 7 registra `confidence` reportado vs. corretude real (contra o gabarito manual) — transforma "confiança" de vibe em sinal calibrado.
+- [x] Criada `.claude/agents/fast-context-deep.md` (`model: sonnet`, mesmo tools/system prompt de `fast-context.md`). **(risco #10)** Cabeçalho de aviso YAML adicionado nos dois arquivos: "manter corpo idêntico ao outro, exceto `model:`".
+- [x] **(solução robusta — risco #3)** Regra de escalonamento em `.claude/rules/exploration.md`: escalona pra `fast-context-deep` quando `confidence != "high"` **ou** `files_found` parecer baixo pro escopo da pergunta.
+- [x] **(solução robusta — risco #9)** Teto de escalonamento (máximo 1 salto) documentado na mesma regra.
+- [ ] Calibração ao longo do tempo: fica pra Fase 7 (precisa de gabarito manual acumulado, não faz sentido antecipar com N=poucas queries).
+- [x] **Bug real encontrado e corrigido durante o teste de escalonamento** (rodada 4, ver `go-no-go-analysis.md`): o contador do `limit_turns_hook.py` usava `transcript_path`/`session_id` como chave, mas esses campos são **os mesmos em toda invocação de subagent dentro da sessão** (confirmado via hook de debug temporário) — contagem vazava entre chamadas separadas do `fast-context`, cortando cada vez mais cedo a cada nova invocação na mesma sessão. Corrigido pra usar `agent_id` (único por invocação, confirmado que bate com o `agentId` da ferramenta `Agent`). Validado com teste sintético: duas invocações com `agent_id` diferentes mas mesmo `session_id`/`transcript_path` mantêm contadores isolados.
 
 ## Fase 4 — Limite de turnos e caps de saída
 

@@ -124,3 +124,17 @@ As duas decisões pendentes da rodada 2 estão resolvidas:
 - **Critério de sucesso do projeto formalmente redefinido** (não é mais "economia de tokens vs. `Explore`", que é estruturalmente não medível nesta plataforma): zero alucinação de citação, corte real de turnos, robustez a ambiguidade de path, contrato de saída estruturado — os 4 critérios do fim da rodada 2, todos observados e confirmados em uso real até aqui.
 
 Próximo passo: seguir para a Fase 2 do `implementation-plan.md` (escalonamento) com esses critérios como gate de qualidade em vez de comparação de tokens.
+
+## Bug real encontrado durante a Fase 3 (rodada 4): contador do hook vazava entre invocações
+
+Ao testar o escalonamento pra `fast-context-deep` na mesma sessão da rodada 3, uma segunda invocação do `fast-context` foi cortada já na 2ª tool call real — muito antes do limite de 10. Investigação: o arquivo de contador (`/tmp/fast-context-turns/<hash>.count`) que tinha ficado em `11` ao fim da rodada 3 continuou incrementando para `13` na nova chamada, em vez de começar do zero.
+
+Causa raiz: `transcript_path` e `session_id`, os dois campos usados como chave de contagem no `limit_turns_hook.py`, **são o mesmo valor da sessão principal em toda chamada de subagent dentro da mesma sessão** — não são únicos por invocação como a documentação original (rodada 2) assumia. Confirmado empiricamente adicionando um hook de debug temporário em `settings.json` (removido depois) que logou o payload completo do `PreToolUse`: `session_id` e `transcript_path` bateram exatamente com os da sessão principal em 3 tool calls consecutivas de uma mesma invocação do subagent. O campo correto, que é de fato único por invocação, é `agent_id` — confere com o `agentId` que a ferramenta `Agent` devolve no resultado.
+
+**Impacto real do bug**: qualquer sessão com mais de uma invocação do `fast-context` (uso normal, não um caso extremo) acumula contagem entre chamadas — cada chamada nova herda o "resto" da anterior, cortando cada vez mais cedo até eventualmente negar a primeira tool call de uma invocação nova. Isso teria silenciosamente degradado a Camada 2 em qualquer sessão real de uso, ao contrário do que a validação da rodada 3 (uma única invocação por sessão) conseguiu detectar.
+
+**Correção**: `limit_turns_hook.py` agora usa `agent_id` como chave primária (com fallback pra `transcript_path`/`session_id` só se `agent_id` não vier no payload, o que não deveria acontecer em invocação de subagent real). Validado com teste sintético: duas invocações (`agent_id` diferente) compartilhando o mesmo `session_id`/`transcript_path` mantêm contadores isolados — 10 chamadas silenciosas cada, independente da outra.
+
+### Lição pro processo
+
+A rodada 3 validou o hook com **uma única invocação por sessão**, o que mascarou esse bug — reforça que "validar em sessão nova" não é suficiente por si só; é preciso testar múltiplas invocações do mesmo subagent na mesma sessão antes de considerar um mecanismo de estado (contador, cache, etc.) robusto.
