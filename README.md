@@ -1,126 +1,132 @@
-# fastContext
+# ContextScout
 
-Um subagente do Claude Code que explora um repositório de código e devolve só o
-trecho relevante (arquivo + linhas) para o assistente principal — em vez de deixar
-o assistente principal (o modelo mais caro) gastar contexto fazendo grep/glob/leitura
-de arquivo diretamente.
+A Claude Code subagent that explores a code repository and returns only the
+relevant excerpt (file + lines) to the main assistant — instead of letting
+the main assistant (the more expensive model) burn context doing
+grep/glob/file reads directly.
 
-Reimplementação nativa (sem infraestrutura externa, só arquivos que o Claude Code
-já sabe interpretar) do conceito **FastContext** (`microsoft/fastcontext`, hoje
-indisponível publicamente).
+Native reimplementation (no external infrastructure, just files Claude Code
+already knows how to interpret) of the **FastContext** concept
+(`microsoft/fastcontext`, now unavailable publicly).
 
----
-
-## Para não programadores
-
-### Em uma frase
-
-Um estagiário de busca, barato e rápido, que vasculha o código antes do assistente
-caro precisar fazer isso ele mesmo — e só entrega a página exata, já grifada.
-
-### Como instalar
-
-Não tem programa pra baixar nem conta pra criar. É só copiar uma pasta.
-
-1. Copie a pasta inteira **`.claude/`** deste projeto para dentro da pasta raiz do
-   seu projeto (o lugar onde você já usa o Claude Code).
-2. Se o seu projeto já tiver uma pasta `.claude/` própria, copie por dentro — arquivo
-   por arquivo — em vez de sobrescrever a pasta toda (peça pra um programador da
-   equipe fazer essa parte, ver seção abaixo).
-3. Feche e abra de novo a sessão do Claude Code no projeto.
-
-Pronto — o explorador já está disponível.
-
-### Como usar
-
-Você não precisa aprender um jeito especial de perguntar. Faça a pergunta
-normalmente, do seu jeito. Duas formas de acionar:
-
-- **Automática**: o assistente principal decide sozinho se vale a pena chamar o
-  explorador, com base na pergunta.
-- **Explícita** (mais confiável): peça citando o nome — *"usa o fast-context pra
-  achar onde fica X"*.
-
-A responsabilidade de perceber se a pergunta é ampla demais e precisa ser quebrada
-em pedaços menores é do assistente principal, não sua.
-
-### Guia visual completo
-
-Um guia com organograma do fluxo, exemplos de perguntas, e a lista honesta do que
-dá pra confiar e o que exige cuidado está disponível como artefato interativo —
-peça para quem te repassou este projeto o link, ou gere um novo pedindo ao Claude
-Code "cria um artefato explicando o fastContext para quem não programa".
+**[📖 Visual guide (interactive artifact, 7 languages)](https://claude.ai/code/artifact/9137bdb0-7f16-4b9a-b62b-dec7a4b28fb6)**
 
 ---
 
-## Para programadores
+## For non-programmers
 
-### Arquitetura
+### In one sentence
 
-Dois agentes nativos do Claude Code, não dois processos separados:
+A cheap, fast search intern who scouts the code before the expensive
+assistant has to do it itself — and only hands back the exact page, already
+highlighted.
 
-- **`fast-context`** (`model: haiku`) — explorador. Só tem acesso a `Read`, `Grep`,
-  `Glob`. Nunca edita, nunca executa. Roda em contexto isolado.
-- **`fast-context-deep`** (`model: sonnet`) — mesmo corpo/system prompt, usado só
-  como escalonamento quando `fast-context` retorna `confidence != "high"` (teto de
-  1 salto). **Corpo mantido idêntico ao de `fast-context.md`, exceto o campo
-  `model`** — ao editar um, edite o outro.
+### How to install
 
-Ativação orquestrada por `.claude/rules/exploration.md`: quando delegar, quando
-não delegar, gate de auto-checagem antes de delegar, defesa em profundidade
-(conferir citação antes de agir mesmo com `confidence="high"`), regra de
-escalonamento, e a convenção de nomenclatura pro `subagentStatusLine`.
+No program to download, no account to create. Just copy one folder.
 
-### Inventário de arquivos
+1. Copy the whole **`.claude/`** folder from this project into the root
+   folder of your project (wherever you already use Claude Code).
+2. If your project already has its own `.claude/` folder, copy file by file
+   instead of overwriting the whole folder (ask a programmer on your team to
+   do this part — see the section below).
+3. Close and reopen the Claude Code session in your project.
 
-| Arquivo | Papel |
+Done — the scout is now available.
+
+### How to use it
+
+You don't need to learn a special way of asking. Just ask your question
+naturally, your own way. Two ways to trigger it:
+
+- **Automatic**: the main assistant decides on its own whether it's worth
+  calling the scout, based on the question.
+- **Explicit** (more reliable): ask by naming it — *"use context-scout to
+  find where X is"*.
+
+Noticing whether a question is too broad and needs to be split into smaller
+pieces is the main assistant's responsibility, not yours.
+
+### Full visual guide
+
+A guide with a flow diagram, question examples, and the honest list of what
+you can trust vs. what needs care is available as an interactive artifact —
+see the link at the top of this README, or ask Claude Code to "create an
+artifact explaining ContextScout for non-programmers" to generate a new one.
+
+---
+
+## For programmers
+
+### Architecture
+
+Two native Claude Code agents, not two separate processes:
+
+- **`context-scout`** (`model: haiku`) — the scout. Only has access to
+  `Read`, `Grep`, `Glob`. Never edits, never executes. Runs in isolated
+  context.
+- **`context-scout-deep`** (`model: sonnet`) — same body/system prompt, used
+  only as escalation when `context-scout` returns `confidence != "high"`
+  (1-hop ceiling). **Body kept identical to `context-scout.md`, except the
+  `model` field** — edit one, edit the other.
+
+Activation orchestrated by `.claude/rules/exploration.md`: when to delegate,
+when not to, self-check gate before delegating, defense in depth (verify a
+citation before acting even with `confidence="high"`), escalation rule, and
+the `subagentStatusLine` naming convention.
+
+### File inventory
+
+| File | Role |
 |---|---|
-| `.claude/agents/fast-context.md` | Definição do explorador (Haiku), contrato de saída estruturado (`<final_answer>`), controle de turnos. |
-| `.claude/agents/fast-context-deep.md` | Variante de escalonamento (Sonnet). |
-| `.claude/rules/exploration.md` | Única fonte de regra de ativação/uso — kill-switch documentado ali. |
-| `.claude/scripts/limit_turns_hook.py` | Hook `PreToolUse` (escopado no frontmatter do `fast-context.md`) que nega a 11ª chamada de `Read\|Grep\|Glob` por invocação de subagente. Chave de contagem: `agent_id` — não usar `session_id`/`transcript_path`, que vazam entre invocações na mesma sessão. |
-| `.claude/scripts/block_secrets_hook.py` | Hook `PreToolUse` global (`settings.json`), bloqueia leitura/comando sobre `.env`, `.env.*`, `secrets/**`. |
-| `.claude/scripts/validate_citations.py` | Script determinístico, **rodado pelo agente principal** (não pelo subagente) depois de receber o `<final_answer>` — confere `os.path.isfile()` de cada citação. Não é chamado automaticamente por hook; é uma checagem manual/scriptada quando quiser validar um lote de respostas. |
-| `.claude/scripts/statusline.py` | `statusLine` do agente principal (custo, contexto, cache). |
-| `.claude/scripts/subagent_statusline.py` | `subagentStatusLine` — uma linha por subagente `running`, com `label` + tokens ao vivo. |
-| `.claude/settings.json` | Wiring dos hooks acima + `statusLine`/`subagentStatusLine` + `deny` de segredos. **Committed** — parte da feature, não preferência pessoal. |
+| `.claude/agents/context-scout.md` | Scout definition (Haiku), structured output contract (`<final_answer>`), turn control. |
+| `.claude/agents/context-scout-deep.md` | Escalation variant (Sonnet). |
+| `.claude/rules/exploration.md` | Single source of truth for the activation/usage rule — the kill-switch is documented there. |
+| `.claude/scripts/limit_turns_hook.py` | `PreToolUse` hook (scoped in `context-scout.md`'s frontmatter) that denies the 11th `Read\|Grep\|Glob` call per subagent invocation. Counting key: `agent_id` — don't use `session_id`/`transcript_path`, which leak across invocations in the same session. |
+| `.claude/scripts/block_secrets_hook.py` | Global `PreToolUse` hook (`settings.json`), blocks reading/commands against `.env`, `.env.*`, `secrets/**`. |
+| `.claude/scripts/validate_citations.py` | Deterministic script, **run by the main agent** (not the subagent) after receiving the `<final_answer>` — checks `os.path.isfile()` for each citation. Not called automatically by a hook; it's a manual/scripted check for when you want to validate a batch of answers. |
+| `.claude/scripts/statusline.py` | Main agent's `statusLine` (cost, context, cache). |
+| `.claude/scripts/subagent_statusline.py` | `subagentStatusLine` — one line per `running` subagent, with `label` + live tokens. |
+| `.claude/settings.json` | Wires up the hooks above + `statusLine`/`subagentStatusLine` + secret `deny` rules. **Committed** — part of the feature, not a personal preference. |
 
-### Instalação
+### Installation
 
 ```bash
-cp -r /mnt/backup/github/fastContext/.claude /caminho/do/seu/projeto/
+cp -r /mnt/backup/github/ContextScout/.claude /path/to/your/project/
 ```
 
-Se o projeto de destino já tiver `.claude/settings.json` próprio, **não sobrescreva
-— faça merge manual** dos blocos `hooks`, `statusLine`, `subagentStatusLine` e
-`permissions.deny`, já que `settings.json` é um objeto único por projeto.
+If the destination project already has its own `.claude/settings.json`,
+**don't overwrite it — merge manually** the `hooks`, `statusLine`,
+`subagentStatusLine`, and `permissions.deny` blocks, since `settings.json` is
+a single object per project.
 
-Subagentes de projeto (`.claude/agents/*.md`) só são recarregados numa sessão nova
-— editar/copiar no meio de uma sessão em andamento não tem efeito até reiniciar.
+Project subagents (`.claude/agents/*.md`) are only reloaded in a new session
+— editing/copying mid-session has no effect until you restart.
 
-### Escopo garantido vs. não garantido
+### Guaranteed vs. non-guaranteed scope
 
-Ver `CLAUDE.md` (seção "Escopo revisado") para o resumo, e os documentos abaixo
-para o detalhe com evidência:
+See `CLAUDE.md` (section "Revised scope") for the summary, and the documents
+below for the detail with evidence:
 
-- `docs/ai/eval/baseline-results-2026-07-06.md` — baseline de validação end-to-end.
-- `docs/ai/risks-and-gaps.md` — 15 riscos identificados, com status de mitigação
-  (dois seguem sem mitigação na origem: calibração de confiança e estouro de turno
-  em perguntas amplas — ambos contidos via regra de uso em `exploration.md`, não
-  corrigidos no subagente em si).
-- `docs/ai/go-no-go-analysis.md` — histórico completo da decisão, incluindo achados
-  negativos e como cada um foi tratado (ou não).
-- `docs/ai/claude-code-capabilities-verified.md` — fatos confirmados sobre a
-  plataforma (schema de agent, bug do `maxTurns`, payload de statusLine).
+- `docs/ai/eval/baseline-results-2026-07-06.md` — end-to-end validation
+  baseline.
+- `docs/ai/risks-and-gaps.md` — 15 identified risks, with mitigation status
+  (two remain unmitigated at the source: confidence calibration and turn
+  blowout on broad questions — both contained via the usage rule in
+  `exploration.md`, not fixed in the subagent itself).
+- `docs/ai/go-no-go-analysis.md` — full decision history, including negative
+  findings and how each was handled (or not).
+- `docs/ai/claude-code-capabilities-verified.md` — confirmed platform facts
+  (agent schema, the `maxTurns` bug, statusLine payload).
 
 ### Kill-switch
 
-Apagar ou renomear `.claude/agents/fast-context.md` desativa o mecanismo sem deixar
-referência quebrada em outro lugar — toda referência ao subagente está concentrada
-em `.claude/rules/exploration.md`.
+Deleting or renaming `.claude/agents/context-scout.md` disables the
+mechanism without leaving a broken reference anywhere else — every reference
+to the subagent is concentrated in `.claude/rules/exploration.md`.
 
-### Regras do repositório
+### Repository rules
 
-- Sem segredos/credenciais em nenhum arquivo committed.
-- `CLAUDE.local.md` e `.claude/settings.local.json` são pessoais — nunca commitar
-  (ver `.gitignore`).
+- No secrets/credentials in any committed file.
+- `CLAUDE.local.md` and `.claude/settings.local.json` are personal — never
+  commit them (see `.gitignore`).

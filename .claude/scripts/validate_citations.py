@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
-"""Valida citacoes arquivo:linha_inicio-linha_fim vindas de um <final_answer> do fast-context.
+"""Validates file:start_line-end_line citations coming from a context-scout <final_answer>.
 
-Mirror deterministico da validacao os.path.isfile() do projeto de referencia
-(Cirius1792/fastcontext) -- so confere existencia do arquivo e se a faixa de
-linha e valida, nao confere relevancia semantica.
+Deterministic mirror of the os.path.isfile() validation from the reference
+project (Cirius1792/fastcontext) -- only checks file existence and whether the
+line range is valid, does not check semantic relevance.
 
-Uso:
+Usage:
     echo "$FINAL_ANSWER_CITATIONS" | python3 .claude/scripts/validate_citations.py
 
-Entrada: uma citacao por linha, formato "/caminho/arquivo.ext:10-15 texto opcional".
-Saida: "OK <citacao>" por linha valida (stdout), "WARN <motivo>" por linha invalida (stderr).
-Exit code 1 se alguma citacao for invalida, 0 se todas passarem (ou entrada vazia).
+Input: one citation per line, format "/path/file.ext:10-15 optional text".
+Output: "OK <citation>" per valid line (stdout), "WARN <reason>" per invalid line (stderr).
+Exit code 1 if any citation is invalid, 0 if all pass (or empty input).
 """
 import os
 import re
@@ -22,20 +22,20 @@ PATTERN = re.compile(r"^(.+?):(\d+)(?:-(\d+))?\s*(.*)$")
 def validate_line(line):
     match = PATTERN.match(line)
     if not match:
-        return False, f"formato inesperado: {line}"
+        return False, f"unexpected format: {line}"
 
     path, start_s, end_s, _rest = match.groups()
     start = int(start_s)
     end = int(end_s) if end_s else start
 
     if not os.path.isfile(path):
-        return False, f"arquivo nao existe: {path}"
+        return False, f"file does not exist: {path}"
 
     with open(path, encoding="utf-8", errors="replace") as f:
         total_lines = sum(1 for _ in f)
 
     if start < 1 or start > end or end > total_lines:
-        return False, f"faixa de linha invalida ({start}-{end}, arquivo tem {total_lines} linhas): {path}"
+        return False, f"invalid line range ({start}-{end}, file has {total_lines} lines): {path}"
 
     return True, f"{path}:{start}-{end}"
 

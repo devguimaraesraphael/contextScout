@@ -1,22 +1,22 @@
 #!/usr/bin/env python3
-"""Hook PreToolUse do fast-context: corte real de tool calls (Camada 2 do risco #4).
+"""context-scout's PreToolUse hook: real tool-call cutoff (Layer 2 of risk #4).
 
-A auto-contagem de turnos no system prompt (Camada 1) e comportamental — o subagent
-pode ignora-la e travar sem emitir <final_answer> (visto na pratica, ver
-docs/ai/go-no-go-analysis.md, "Rodada 2", achado #2). Este hook conta de verdade as
-chamadas de Read/Grep/Glob por invocacao do subagent e nega a partir do limite,
-devolvendo uma instrucao pro modelo finalizar.
+Self-counting turns in the system prompt (Layer 1) is behavioral — the subagent
+can ignore it and stall without emitting <final_answer> (seen in practice, see
+docs/ai/go-no-go-analysis.md, "Round 2", finding #2). This hook actually counts
+Read/Grep/Glob calls per subagent invocation and denies past the limit,
+returning an instruction for the model to finish.
 
-Chave de contagem: agent_id recebido no payload do hook. Confirmado empiricamente
-(rodada 4, ver docs/ai/go-no-go-analysis.md) que transcript_path e session_id sao
-o MESMO valor da sessao principal em toda chamada de subagent dentro da sessao —
-usar qualquer um dos dois faz o contador vazar entre invocacoes distintas do
-fast-context na mesma sessao, cortando cada vez mais cedo a cada chamada nova.
-agent_id, por outro lado, e unico por invocacao (bate com o agentId devolvido
-pela ferramenta Agent).
+Counting key: agent_id received in the hook payload. Confirmed empirically
+(round 4, see docs/ai/go-no-go-analysis.md) that transcript_path and session_id
+are the SAME value as the main session on every subagent call within the
+session — using either one leaks the counter across distinct context-scout
+invocations in the same session, cutting off earlier and earlier with each new
+call. agent_id, on the other hand, is unique per invocation (matches the
+agentId returned by the Agent tool).
 
-Uso: configurado no frontmatter `hooks.PreToolUse` do fast-context.md, matcher
-"Read|Grep|Glob". Recebe o payload JSON do hook via stdin.
+Usage: configured in the `hooks.PreToolUse` frontmatter of context-scout.md,
+matcher "Read|Grep|Glob". Receives the hook's JSON payload via stdin.
 """
 import hashlib
 import json
@@ -26,7 +26,7 @@ import tempfile
 import time
 
 MAX_TOOL_CALLS = 10
-COUNTER_DIR = os.path.join(tempfile.gettempdir(), "fast-context-turns")
+COUNTER_DIR = os.path.join(tempfile.gettempdir(), "context-scout-turns")
 STALE_SECONDS = 3600
 
 
@@ -76,9 +76,9 @@ def main():
                 "hookEventName": "PreToolUse",
                 "permissionDecision": "deny",
                 "permissionDecisionReason": (
-                    f"Limite de {MAX_TOOL_CALLS} tool calls atingido (corte real, "
-                    "nao comportamental). Emita <final_answer confidence=\"low\"> "
-                    "agora com o que ja foi encontrado, sem mais tool calls."
+                    f"Limit of {MAX_TOOL_CALLS} tool calls reached (real cutoff, "
+                    "not behavioral). Emit <final_answer confidence=\"low\"> "
+                    "now with whatever was already found, with no more tool calls."
                 ),
             }
         }))

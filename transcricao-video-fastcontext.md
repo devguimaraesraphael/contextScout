@@ -1,60 +1,217 @@
-# Transcrição: "46% Dos Tokens Do Seu Agente Vão Pro Lixo (FastContext Resolve)"
+# Transcript (translated): "46% Of Your Agent's Tokens Go To Waste (FastContext Fixes It)"
 
 - **URL**: https://www.youtube.com/watch?v=GHc6edoG0RQ
-- **Canal**: Hora de Codar
-- **Fonte da legenda**: legenda automática (pt), gerada via `yt-dlp`
+- **Channel**: Hora de Codar
+- **Original language**: Portuguese (Brazil). **Caption source**: auto-generated captions (pt), pulled via `yt-dlp`. This file is an English translation of that original transcript, done for this project's internal documentation.
 
-## Resumo (descrição original do vídeo)
+## Summary (original video description)
 
-FastContext é um projeto open source da Microsoft que ataca um problema que quase ninguém percebe, mas que tá te custando caro: o seu agente de IA gasta uma parte enorme dos tokens só procurando código no projeto, antes mesmo de começar a resolver a tarefa. A proposta do FastContext é separar essas duas coisas, a busca e a resolução, delegando a exploração do repositório pra um explorador especializado, que devolve só o que importa.
+FastContext is a Microsoft open-source project that attacks a problem almost
+nobody notices, but that's costing you a lot: your AI agent spends a huge
+chunk of its tokens just searching for code in the project, before it even
+starts solving the task. FastContext's proposal is to separate these two
+things, search and resolution, delegating repository exploration to a
+specialized scout that returns only what matters.
 
-Repositório citado: https://github.com/microsoft/fastcontext (obs. do autor: aparentemente removido/privado no momento da gravação, mas deve voltar)
+Repository mentioned: https://github.com/microsoft/fastcontext (author's
+note: apparently removed/private at recording time, but should come back)
 
-## Transcrição
+## Transcript
 
-Galera, hoje tô aqui para falar de fast context, uma skill gratuita da Microsoft, quem diria, que vai ajudar a gente a economizar muitos tokens. A ideia é bem simples. Em vez do modelo principal de IA que a gente usa quando a gente tá programando ali, criando alguma coisa com a IA, buscar diretamente no contexto, ela vai utilizar um subagent para olhar o que a gente precisa no contexto, né? Porque toda IA vai gerando contexto a cada promp que a gente manda. E isso faz com que esse subagent ele gaste menos tokens, porque ele é destinado a somente procurar coisas no contexto. E ele pode estar utilizando uma outra IA, uma IA local, uma IA mais barata, um modelo mais simples. Tu vai configurar dessa forma e isso vai gerar economia. Quem busca no contexto é uma IA separada e quem desenvolve é a IA mais cara, né? Masá de um tier maior. Bora lá dar uma olhada como é que instala, o que que esse cara é e mais outros detalhes e é óbvio, testá-lo na prática. Chega aí.
+Hey everyone, today I'm here to talk about FastContext, a free skill from
+Microsoft, of all people, that's going to help us save a lot of tokens. The
+idea is pretty simple. Instead of the main AI model we use when we're
+coding, building something with AI, searching directly in the context, it's
+going to use a subagent to look at what we need in the context, right?
+Because every AI keeps generating context with every prompt we send. And
+that makes this subagent spend fewer tokens, because it's only meant to
+search for things in the context. And it can be using a different AI, a
+local AI, a cheaper AI, a simpler model. You configure it that way and that
+generates savings. A separate AI does the searching in the context, and a
+more expensive AI, a higher-tier one, does the developing. Let's take a
+look at how to install it, what this thing is, and other details, and of
+course, test it in practice. Let's get to it.
 
-Bom, galera, primeira coisa, esse aqui é o repositório, tá? É algo bem novo, né? Relativamente novo. Tá sendo atualizado aí constantemente, tem atualizações aqui há 3 horas atrás. E é esse repositório estará na descrição para vocês verem como se instala. Mas antes eu quero dar mais alguns detalhes pra gente poder contextualizar todo mundo, beleza? Bom, então o nome do repositório é fast context e galera, tô estreando aqui essa esse estilo de slides, né? Então se vocês curtiram em vez do scraw, deixem aí nos comentários, beleza?
+Okay, first thing, this here is the repository, right? It's something
+pretty new, relatively new. It's being updated constantly, there are
+updates here from 3 hours ago. And this repository will be in the
+description for you to see how to install it. But first I want to give a
+few more details so we can give everyone context, okay? So the name of the
+repository is FastContext, and folks, I'm debuting this slide style here,
+so if you liked it instead of the scrawl, leave it in the comments, okay?
 
-Bom, basicamente um subagent explora o repositório no lugar do nosso coding agent. Então a gente vai ter dois caras separados e esse cara, como ele só busca informação, ele pode ser uma IA mais barata que ele vai conseguir atingir resultados iguais, porque a informação tá toda lá, ela só precisa ser encontrada, né? E para quem não sabe, né, o agente principal, ele busca direto no contexto para ver se a informação já está lá. Então é meio que um atalho que a gente tem, né?
+Okay, basically a subagent explores the repository instead of our coding
+agent. So we're going to have two separate guys, and this guy, since he
+only fetches information, he can be a cheaper AI that will manage to reach
+the same results, because the information is all there, it just needs to
+be found, right? And for those who don't know, the main agent searches
+directly in the context to see if the information is already there. So
+it's kind of a shortcut we have, right?
 
-Bom, olha só, explorar custa caro, né? Eu boto aqui que o mesmo modelo que resolve a tarefa também fica fazendo grap, glob e leitura de arquivo, ou seja, ele busca basicamente no contexto para achar algum código, alguma coisa que precisa para resolver o problema. Cada busca vira lixo no histórico e polui o raciocínio seguinte, né? vai somando ao contexto, porque ele vai colocando as informações em cima das outras. E isso que naturalmente, né, enche o contexto. A gente tem que limpar de tempos em tempos, senão a gente consome muitos tokens.
+Okay, look, exploring is expensive, right? I put here that the same model
+that solves the task also keeps doing grep, glob, and file reading, that
+is, it basically searches in the context to find some code, something it
+needs to solve the problem. Every search turns into garbage in the history
+and pollutes the following reasoning, right? It keeps adding to the
+context, because it keeps stacking information on top of other information.
+And that naturally fills up the context. We have to clean it up from time
+to time, otherwise we consume a lot of tokens.
 
-Ele delega, né, não explora. Então o agente principal ele vai mandar uma pergunta em linguagem natural para esse fast context, que vai ser o outro agente. Ele explora o repositório em contex separado, vai devolver somente o que importa pro agente principal, o histórico do sover, né, de quem resolve as coisas ficar limpo, nada de bagunça, de navegação volta para ele. Então esse aqui é mais ou menos o esqueminha ali do que acontece por baixo dos panos quando a gente usa o fast context.
+It delegates, it doesn't explore. So the main agent will send a natural
+language question to this FastContext, which is the other agent. It
+explores the repository in a separate context, and will return only what
+matters to the main agent — the resolver's history stays clean, no mess, no
+navigation comes back to it. So this here is roughly the little diagram of
+what happens under the hood when we use FastContext.
 
-Três ferramentas, então ele não executa nada, é só busca: ferramenta de leitura para poder ler arquivo com número de linha; globs por padrão, então vai descobrir o caminho do arquivo; e grap busca em forma de rejex/expressão regular no código. Devolve evidência, não bagunça, no fim um bloco enxuto, arquivo mais intervalo de linhas, né? Isso aqui é a saída dele. Por exemplo, só o que interessa mesmo, né? A gente pode ver aqui, arquivo e linha. O agente principal recebe contexto limpo e já parte para editar, testar ou responder, né, o que ele precisa fazer. Toda a navegação fica do outro lado, não entra no histórico de quem resolve. Mais acerto, menos token. Isso aqui são dados reportados por eles, né, que teve mais precisão e mais economia quando se tava utilizando ali o fast context.
+Three tools, so it doesn't execute anything, it only searches: a read tool
+to read a file with line numbers; glob by pattern, so it'll discover the
+file path; and grep searches using regex/regular expressions in the code.
+It returns evidence, not mess — in the end, a lean block, file plus line
+range, right? That's its output. For example, only what actually matters,
+right? We can see here, file and line. The main agent receives a clean
+context and can already go on to edit, test, or answer, whatever it needs
+to do. All the navigation stays on the other side, it doesn't enter the
+resolver's history. More accuracy, fewer tokens. This here is data they
+reported, that there was more precision and more savings when using
+FastContext.
 
-Fechou? Então, agora sim, bora lá entender como se usa. Galera, o processo de instalação aqui, ele não é tão complexo. Aqui eles também explicam como é que funciona o mecanismo um pouco mais detalhado, a resposta, como eu mostrei lá. E aqui tem a instalação, tá? Dependendo do teu sistema operacional, vai ser um pouquinho mais trabalhoso ou não. Eu instalei no Windows via WSL, funcionou normal, tá? E tu pode, por exemplo, apontar para algum modelo local do OLAMA, né, ou até um modelo mais barato que tu tenha via assinatura, sei lá, um Hiko, um GPT, né? Já que o Codex assinatura é barata teoricamente e quase não gasta o limite ali, tu pode estar destinando ele para fazer isso e programando de fato com o Opus, né? Então vai desafogar o teu Opus e tu vai ter muito mais usagers, é uma ideia, tá?
+Got it? So now, let's understand how to use it. Folks, the installation
+process here isn't too complex. Here they also explain how the mechanism
+works in a bit more detail, the response, like I showed. And here's the
+install step, right? Depending on your operating system, it'll be a bit
+more work or not. I installed it on Windows via WSL, worked fine. And you
+can, for example, point it to some local Ollama model, or even a cheaper
+model you have via subscription, I don't know, a Haiku, a GPT, since Codex
+subscription is theoretically cheap and barely eats into your limit, you
+can assign it to do this and actually code with Opus, right? So it'll take
+the load off your Opus and you'll get a lot more usage, that's the idea,
+okay?
 
-Então eu já instalei aqui, galera, e vou apenas mostrar ali a parte da utilização, né? Lembrando, estamos aqui quase com o lançamento do nosso treinamento Pare de Brigar com a IA. O link para inscrição vai estar aqui na descrição e no comentário fixado desse vídeo para tu poder ter acesso a benefícios e a um desconto especial de lançamento, tá? Nesse treinamento, para quem não sabe, eu vou explicar os meus métodos de como eu desenvolvo projetos, então tu vai aprender na prática como eu faço para poder aplicar aí também e tá economizando tokens, né, que é o propósito desse vídeo aqui. Tu vai também conseguir atingir teu objetivo mais rápido, entender como eu penso na hora de desenvolver meus projetos, já que eu faço isso o dia todo praticamente e aí consequentemente colocar a tua ideia no ar. Fechou?
+So I've already installed it here, folks, and I'll just show the usage
+part, right? Reminder, we're almost at the launch of our training "Stop
+Fighting With AI". The sign-up link will be in the description and pinned
+comment of this video so you can get access to benefits and a special
+launch discount, okay? In this training, for those who don't know, I'll
+explain my methods for how I develop projects, so you'll learn in practice
+how I do it so you can apply it too and save tokens, which is the point of
+this video here. You'll also manage to reach your goal faster, understand
+how I think when developing my projects, since I do this basically all day,
+and as a result, ship your idea. Got it?
 
-Bom, eu tô aqui com o projeto aberto, galera. E olha só, o fast context ele vai estar rodando em paralelo, né? Ele vai estar ali executado no teu computador. Então ele já vai estar pré-configurado e quando rodar algo como esse prompt aqui, onde eu estou ativando ele direto, ele deve responder. Então tô usando aqui o caminho do fast context perguntando alguma coisa, onde fica a lógica de autenticação e o que eu precisaria mudar para aceitar login por token. Isso vai fazer com que ele acesse o fast context e nos traga a resposta como ele traria pro né? Então aqui eu tô executando diretamente o fast context. Então veja aqui a IA vai receber isso aqui, né, final answer. Então ele vai receber os arquivos que mais importam para ele tomar a decisão com base na pergunta que eu fiz. Então a IA que vai fazer essa pergunta, né? Mas assim a gente vê que tá funcionando.
+Okay, I'm here with the project open, folks. And look, FastContext will be
+running in parallel, right? It'll be running on your computer. So it'll
+already be pre-configured, and when you run something like this prompt
+here, where I'm activating it directly, it should respond. So I'm using the
+FastContext path here, asking something, where's the authentication logic
+and what would I need to change to accept login via token. This will make
+it access FastContext and bring us the answer as it would to it, right? So
+here I'm running FastContext directly. So see here, the AI will receive
+this here, final answer. So it'll receive the files that matter most for it
+to make the decision based on the question I asked. So the AI that will
+ask this question, right? But anyway, we can see it's working.
 
-Pra gente usar com a IA, tu vai ligar lá teu cloud code da vida e tu vai precisar configurar uma skill. Porque a skill, essa aqui, ó, fast context, tá lá no repositório também e parte da instalação é ensinar essa skill. Ela mostra como que a IA vai utilizar o fast context, beleza? Então ela meio que instrui pra isso. E aí depois do fast context instalado, configurado, né, com uma IA menor, com a skill colocada no teu projeto, tu vai fazer prompts, né, que vão naturalmente desenvolver teu projeto e à medida que o Fast Context precisar ser acionado, ele vai ser porque vai ter uma skill lá que vai estar pronta para utilização.
+To use it with the AI, you'll fire up your Claude Code or whatever, and
+you'll need to configure a skill. Because the skill, this one here, look,
+FastContext, is also in the repository, and part of the installation is
+teaching this skill. It shows how the AI is going to use FastContext,
+okay? So it kind of instructs it for that. And then, after FastContext is
+installed, configured, right, with a smaller AI, with the skill placed in
+your project, you'll write prompts that will naturally develop your
+project, and as FastContext needs to be triggered, it will be, because
+there'll be a skill ready for use.
 
-E aí o que acontece? É uma skill, ela pode ser ativada ou não, né? Se tu for implícito, ou tu pode estar utilizando aqui o slash command para ativar ela, né? Ou tu pode estar utilizando um prompt sendo explícito falando o nome dela e aí o agent vai achar e usar. Então tem essas três maneiras. A implícita não garante que ela vai ser utilizada, então tem que ter cuidado para poder ativar ela na hora certa ou criar alguma regra no teu projeto, talvez no cloud MD (CLAUDE.md), explicando que se precisa procurar no contexto que use o fast context. Então eu fazendo assim explicitamente vai funcionar de certeza.
+And what happens then? It's a skill, it can be activated or not, right? If
+you're implicit about it, or you can use the slash command to activate it,
+right? Or you can use a prompt being explicit, saying its name, and the
+agent will find and use it. So there are these three ways. The implicit one
+doesn't guarantee it'll be used, so you have to be careful to activate it
+at the right time or create some rule in your project, maybe in the
+CLAUDE.md, explaining that if it needs to search in the context, use
+FastContext. So doing it explicitly like this will definitely work.
 
-Eu pedi aqui para ele usar esse fast context para descobrir onde fica o fluxo de autenticação. Ele vai carregar a skill. Eu tô vendo que ele tá fazendo isso e por baixo dos panos, ele vai tá ativando também o fast context para poder acessar o contexto e trazer a resposta pro cloud code. Tu pode estar testando até a resposta com e sem ele para ver que ela até diminui o tempo de resposta, né? Eu fiz aqui esses testes isolados, consegui obter respostas mais rápidas utilizando o fast context. Então veja aqui já retornou, né? Então a gente tem aqui o acesso, né, a final answer. E aqui ele me trouxe tudo que tem a ver, né, com a relação da pergunta. E agora o meu agent tem exatamente essa resposta para trabalhar em cima disso. Nesse caso aqui seria autenticação.
+I asked it here to use this FastContext to find out where the
+authentication flow is. It'll load the skill. I'm seeing it doing that, and
+under the hood, it's also activating FastContext to access the context and
+bring the answer back to Claude Code. You can even test the response with
+and without it to see that it even reduces response time, right? I did
+these isolated tests here, I managed to get faster answers using
+FastContext. So look, it already returned, right? So here we have access
+to the final answer. And here it brought me everything related to the
+question. And now my agent has exactly this answer to work with. In this
+case it would be authentication.
 
-Então, só para exemplificar aqui para vocês, demorou cerca de 40 segundos. Eu vou fazer aqui a mesma pergunta em outro terminal, né, pra gente poder entender se vai demorar um pouco mais. Então, é a mesma coisa, né? A mesma pergunta, opa, aqui só duplicou, né? Ó, colocar certinho e vamos ver se demora um pouco mais. Então aqui ele vai ter que entrar no contexto, procurar as coisas. Se não tiver, ele vai lá acessar os arquivos. Então ele vai fazer tudo via, né? Aqui nesse caso número um que a gente fez, ele utilizou a outra IA que eu tenho configurada para gerar a parte de busca de contexto que pertence ao Fast Context. E depois ele entregou pro Opus para formar a resposta final. Só para vocês entenderem. E levou aqui 40 segundos.
+So, just to give you an example here, it took about 40 seconds. I'll ask
+the same question here in another terminal, right, so we can understand if
+it takes a bit longer. So, it's the same thing, right? The same question,
+oops, here it just duplicated, right? Let me fix it and let's see if it
+takes a bit longer. So here it'll have to go into the context, search for
+things. If it's not there, it'll go access the files. So it'll do
+everything via, right? Here in this case number one that we did, it used
+the other AI I have configured to generate the context-search part that
+belongs to FastContext. And then it handed it off to Opus to form the
+final answer. Just so you understand. And it took 40 seconds here.
 
-Quando eu tô aqui sem o fast context, naturalmente deve demorar mais. Então aqui, ó, já passou. E claro que foi uma pergunta simples, né? Quanto maior a complexidade, mais ganho de tempo e de tokens a gente vai ter. Isso é óbvio. Então vejo aqui, já passou dos 50, fez um teste aqui da mesma questão, né, só uma pedindo para ele utilizar o fast context e outras não. E demorou muito mais e gastei muito mais tokens no processo também porque aqui ele utilizou a IA mais avançada e aqui ele fez um split, né, um pouco com a IA que tá no fast context e um pouco com o Opus que tá no cloud code. Então só nisso a gente já consegue ter um exemplo bem claro, né, de ganho de tempo e tokens.
+When I'm here without FastContext, naturally it should take longer. So
+here, look, it's already gone past. And of course it was a simple question,
+right? The more complexity, the more time and token gain we're going to
+have. That's obvious. So I see here, it's already past 50, I did a test
+here of the same question, right, just one asking it to use FastContext
+and the other not. And it took much longer and I spent a lot more tokens
+in the process too, because here it used the more advanced AI, and here it
+did a split, right, a bit with the AI that's in FastContext and a bit with
+the Opus that's in Claude Code. So just with this we already have a pretty
+clear example, right, of time and token gains.
 
-Bom, galera, aí eu sei que tem gente que vai falar no comentário ali que não foi exatamente o mesmo prompt. Aí eu fui lá e já fiz aqui, me adiantei, né? Coloquei o mesmo prompt, somente coloquei uma vírgula e pedi para usar o fast context para ajudar na busca. Bom, e esse aqui foi o resultado. Então, realmente foi um pouquinho mais do que o primeiro exemplo, mas ainda assim teve aí praticamente, sei lá, 40 e poucos segundos de vantagem utilizando o fast context para o mesmo resultado. Fechou?
+Okay, folks, now I know some people are going to comment that it wasn't
+exactly the same prompt. So I went ahead and already did this, got ahead
+of it, right? I put the same prompt, I only added a comma and asked it to
+use FastContext to help with the search. Okay, and this here was the
+result. So, it really was a little bit more than the first example, but
+still had, I don't know, 40-something seconds of advantage using
+FastContext for the same result. Got it?
 
-Então é uma skill que realmente vai ajudar a tu economizar tokens, ter respostas mais rápidas, mas exige um setupzinho de configuração para deixar ela rodando. Lembrando novamente, né, tu pode colocar um modelo menor que está na tua assinatura, né? Por exemplo, tu assina o cloud, ele precisa ter acesso ao Stel, ao Haiku, tu pode delegar isso a esses modelos. E a mesma coisa serve ali pro Codex, colocar versões menores do que o GPT 5.5. E o melhor cenário ainda possível seria colocar um modelo local para que ele tivesse essa responsabilidade e conseguisse lidar com as solicitações, né, que são feitas ali com a base de código, né? Aqui inclusive no repositório eles recomendam um modelo pequeno para isso, tá? Então tu pode estar instalando esse modelo e testando, né? Vai depender se cabe no teu PC e tal, mas não é um modelo grande e vai dar conta do recado porque é um modelo indicado pela própria Microsoft para utilizar o fast context. Beleza?
+So it's a skill that will really help you save tokens, get faster answers,
+but it requires a bit of setup to get it running. Reminder again, right,
+you can put a smaller model that's in your subscription, right? For
+example, you subscribe to Claude, it needs access to Sonnet, to Haiku, you
+can delegate this to those models. And the same goes for Codex, put smaller
+versions than GPT 5.5. And the best possible scenario would still be to put
+a local model so it had this responsibility and could handle the requests
+made against the codebase, right? Here in the repository they even
+recommend a small model for this, right? So you can install this model and
+test it, right? It'll depend on whether it fits on your PC and so on, but
+it's not a big model and it'll get the job done because it's a model
+recommended by Microsoft itself for using FastContext. Okay?
 
-Esse modelo que eu acabei de falar, tu vai encontrar no Hugging Face, né, que tu vai conseguir fazer o download dele e aí vê se fica melhor, né, do que utilizar um modelo pago, por exemplo. Mas, cara, tenta utilizar ou modelos que tu já assina, né, só que menores, ou, sei lá, modelos gratuitos, né, a gente, às vezes a gente tem uma coisa no Open Router, dá para usar criatividade nesse ponto, né? Não dá pra ter desculpa, porque com certeza você vai conseguir economizar tokens. E quanto mais a IA vai sendo treinada, as skills vão sendo utilizadas de forma implícita mesmo, né? Vai conseguindo ter uma boa economia sem precisar ficar chamando skill toda hora, lembrando disso. Então tá dada aí a sugestão para vocês. Beleza, galera?
+This model I just mentioned, you'll find it on Hugging Face, right, you'll
+be able to download it and see if it works better, right, than using a
+paid model. But, look, try to use either models you already subscribe to,
+just smaller ones, or, I don't know, free models, right, sometimes we have
+something on OpenRouter, you can get creative on this point, right? There's
+no excuse, because you'll definitely manage to save tokens. And the more
+AI gets trained, skills are going to be used implicitly more and more,
+right? You'll manage to get good savings without needing to keep invoking
+the skill all the time, keep that in mind. So that's the suggestion for
+you all. Okay, folks?
 
-Bom, relembrando, né? Não se esqueçam, se inscrevam aí Pare de Brigar com a IA. Se tu tá tendo resultados ruins, independente da IA, se não tá conseguindo chegar no ponto que tu quer nos teus projetos aí, vibe codados, esse treinamento aqui é solução, super prático. A gente vai desenvolver o projeto juntos, prompt, estratégias do começo ao fim.
+Okay, reminder, right? Don't forget, sign up for "Stop Fighting With AI".
+If you're getting bad results, regardless of the AI, if you can't reach the
+point you want in your vibe-coded projects, this training here is the
+solution, super practical. We're going to build the project together,
+prompts, strategies from start to finish.
 
-Bom, galera, então sobre o Fast Context era isso. Espero que vocês tenham curtido. Não esqueça, deixa um like aí, se inscreva se não for inscrito. Isso ajuda a gente bastante e é claro, né, coloca nos comentários de vocês pra gente trocar uma ideia aqui, entender se vocês já utilizaram, se compensou para vocês, enfim, bora aí trocar uma ideia aqui embaixo. Vou ficando por aqui e claro, espero vocês aí no próximo vídeo. Valeu!
+Okay, folks, so that was it about FastContext. I hope you enjoyed it.
+Don't forget, leave a like, subscribe if you haven't. It helps us a lot,
+and of course, put it in your comments so we can chat, understand if you've
+already used it, if it paid off for you, anyway, let's chat down there.
+I'll wrap up here, and of course, see you in the next video. Cheers!
 
-## Timestamps (do vídeo original)
+## Timestamps (from the original video)
 
-- 00:00 — FastContext pode fazer você economizar MUITOS tokens
-- 01:00 — Como funciona o FastContext
-- 03:40 — Como instalar o FastContext
-- 05:15 — Como usar o FastContext
-- 08:20 — Comparação de prompt COM e SEM FastContext
-- 11:00 — Considerações finais sobre FastContext
+- 00:00 — FastContext can save you A LOT of tokens
+- 01:00 — How FastContext works
+- 03:40 — How to install FastContext
+- 05:15 — How to use FastContext
+- 08:20 — Prompt comparison WITH and WITHOUT FastContext
+- 11:00 — Final thoughts on FastContext

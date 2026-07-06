@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""statusLine principal — barra "FastCode Activate" + linha do modelo dev.
+"""Main statusLine — "ContextScout Active" bar + dev model line.
 
-Payload confirmado empiricamente nesta sessao (nao so pela doc oficial):
-model.id/display_name, effort.level, cost.total_cost_usd,
+Payload confirmed empirically in this session (not just from the official
+docs): model.id/display_name, effort.level, cost.total_cost_usd,
 context_window.total_input_tokens/used_percentage,
-context_window.current_usage.cache_read_input_tokens (aninhado, nao top-level
-como a doc oficial sozinha sugeria). Ver docs/ai/claude-code-capabilities-verified.md.
+context_window.current_usage.cache_read_input_tokens (nested, not top-level
+as the official docs alone suggested). See docs/ai/claude-code-capabilities-verified.md.
 """
 import json
 import sys
@@ -23,7 +23,7 @@ def main():
     try:
         payload = json.load(sys.stdin)
     except json.JSONDecodeError:
-        print("FastCode Activate")
+        print("ContextScout Active")
         return
 
     model = payload.get("model", {})
@@ -33,7 +33,7 @@ def main():
     cache_read = ctx.get("current_usage", {}).get("cache_read_input_tokens", 0)
 
     line = (
-        f"⚡ FastCode Activate | dev: {model.get('display_name', '?')}"
+        f"🔎 ContextScout Active | dev: {model.get('display_name', '?')}"
         f" (effort:{effort.get('level', '?')})"
         f" | ${cost.get('total_cost_usd', 0):.2f}"
         f" | ctx {ctx.get('used_percentage', 0)}%"

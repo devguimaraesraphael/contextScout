@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""subagentStatusLine — linha por subagent ativo (modelo discovery).
+"""subagentStatusLine — one line per active subagent (discovery model).
 
-Payload confirmado empiricamente (nao documentado oficialmente): campo
-"tasks", lista de {id, type, status, description, label, startTime,
-tokenCount, tokenSamples, cwd}. NAO ha campo de model/agent_type aqui —
-so o PreToolUse hook payload (limit_turns_hook.py) recebe "agent_type".
-Por isso a convencao deste projeto e' o agente principal incluir o nome
-do subagent na `description` da chamada Agent (ex: "fast-context: ..."
-ou "fast-context-deep: ..."), pra aparecer legivel nesta linha.
+Payload confirmed empirically (not officially documented): field "tasks", a
+list of {id, type, status, description, label, startTime, tokenCount,
+tokenSamples, cwd}. There is NO model/agent_type field here — only the
+PreToolUse hook payload (limit_turns_hook.py) receives "agent_type". That's
+why this project's convention is for the main agent to include the
+subagent's name in the `description` of the Agent call (e.g. "context-scout: ..."
+or "context-scout-deep: ..."), so it shows up legibly on this line.
 """
 import json
 import sys

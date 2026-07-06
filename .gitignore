@@ -4,3 +4,6 @@ CLAUDE.local.md
 
 # Sessões e memória automática (gerado pelo Claude Code)
 .claude/projects/
+
+# Docs de discovery/processo — não versionar
+docs/

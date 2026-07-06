@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-"""Hook PreToolUse: bloqueia leitura/escrita/execução sobre segredos (risco #13).
+"""PreToolUse hook: blocks reading/writing/executing against secrets (risk #13).
 
-Protege o agente principal e o fast-context ao mesmo tempo (mesmo hook,
-matcher "Read|Edit|Write|Bash" em settings.json). Verifica tool_input.file_path
-(Read/Edit/Write) e tool_input.command (Bash) contra padroes de segredo e sai
-com exit code 2 quando bate, o que bloqueia a chamada e devolve a mensagem
-de erro pro modelo.
+Protects the main agent and context-scout at the same time (same hook,
+matcher "Read|Edit|Write|Bash" in settings.json). Checks tool_input.file_path
+(Read/Edit/Write) and tool_input.command (Bash) against secret patterns and
+exits with exit code 2 when it matches, which blocks the call and returns the
+error message to the model.
 
-Fonte do padrao: docs/ai/claude-code-capabilities-verified.md, secao
-"Padrao para bloquear leitura de segredos".
+Pattern source: docs/ai/claude-code-capabilities-verified.md, section
+"Pattern for blocking secret reads".
 """
 import json
 import re
@@ -40,8 +40,8 @@ def main():
 
     if any(matches_secret(c) for c in candidates):
         print(
-            "Bloqueado: acesso a arquivo/padrao de segredo (.env, .env.*, secrets/**) "
-            "nao e permitido.",
+            "Blocked: access to a secret file/pattern (.env, .env.*, secrets/**) "
+            "is not allowed.",
             file=sys.stderr,
         )
         sys.exit(2)
