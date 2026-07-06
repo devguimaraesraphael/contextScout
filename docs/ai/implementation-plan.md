@@ -50,18 +50,16 @@ Docs de referência para cada fase:
 - [ ] **(resolvido — risco #12)** Não precisa de configuração extra: o Grep já respeita `.gitignore` por padrão. Só adicionar no system prompt uma exclusão explícita pra código vendorizado/gerado que tenha sido commitado (não gitignored), se souber de algum caso assim no repo de teste.
 - [ ] Testar com 2-3 queries reais num repositório (ex: "onde fica a lógica de autenticação?") e conferir se o formato estruturado, o grounding e a auto-contagem funcionam como esperado.
 
-## Fase 2 — Ativação explícita e regras
+## Fase 2 — Ativação explícita e regras ✅ implementada
 
 **Objetivo:** garantir que o subagent seja realmente usado (o vídeo de referência mostrou que ativação implícita de skill não é confiável).
 
-- [ ] **(solução robusta — risco #1)** Adicionar regra em `CLAUDE.md` (ou `.claude/rules/exploration.md`) com critério **simétrico**, com exemplos concretos dos dois lados (few-shot ancora melhor que regra abstrata):
-  - **Usar**: localização desconhecida, lógica atravessando >2 arquivos/módulos, "como funciona X", análise de impacto ("o que quebra se eu mudar Y").
-  - **Não usar**: arquivo já lido nesta sessão, grep único num arquivo já conhecido, edição pura sem exploração, símbolo exato já visível no contexto atual.
-- [ ] **(solução robusta — risco #1)** Gate de auto-checagem obrigatório antes de delegar: instruir o agente principal a se perguntar explicitamente "eu já sei o arquivo:linha exato pra isso?" antes de invocar `fast-context` — se sim, pula a delegação.
-- [ ] **(solução robusta — risco #15)** Estender o gate de auto-checagem com "eu já respondi isso nesta conversa?" — evita re-disparo de delegação em perguntas de follow-up já cobertas por uma citação anterior.
-- [ ] Defesa em profundidade pro risco #2: regra pra o agente principal sempre fazer uma leitura rápida de pelo menos uma citação recebida antes de editar em cima dela.
-- [ ] **(resolvido — risco #13)** Adicionar em `settings.json`: hook `PreToolUse` em `Read|Edit|Write|Bash` que nega (`exit code 2`) leitura de `.env`/`.env.*`/`secrets/**`, mais regra `deny` determinística equivalente (`"deny": ["Read(./.env)", "Read(./.env.*)", "Read(./secrets/**)"]`). Protege agente principal e `fast-context` ao mesmo tempo — ver `claude-code-capabilities-verified.md`.
-- [ ] **(solução robusta — risco #14)** Concentrar toda referência ao `fast-context`/`fast-context-deep` numa única regra dedicada (`.claude/rules/exploration.md`), nunca espalhada solta pelo `CLAUDE.md` — define o kill-switch como "apagar/renomear esses arquivos", sem procurar referência quebrada depois.
+- [x] **(solução robusta — risco #1)** Regra criada em `.claude/rules/exploration.md` com critério **simétrico** e exemplos concretos dos dois lados (usar: localização desconhecida, >2 arquivos, "como funciona X", análise de impacto; não usar: arquivo já lido, grep único num arquivo conhecido, edição pura, símbolo já visível).
+- [x] **(solução robusta — risco #1)** Gate de auto-checagem em `.claude/rules/exploration.md`: "eu já sei o arquivo:linha exato pra isso?" antes de delegar.
+- [x] **(solução robusta — risco #15)** Gate estendido com "eu já respondi isso nesta conversa?" no mesmo arquivo.
+- [x] Defesa em profundidade pro risco #2: regra de leitura rápida de pelo menos uma citação antes de editar em cima dela, em `.claude/rules/exploration.md`.
+- [x] **(resolvido — risco #13)** `.claude/scripts/block_secrets_hook.py` + `hooks.PreToolUse` (`Read|Edit|Write|Bash`) em `settings.json`, mais `deny` determinístico (`Read(./.env)`, `Read(./.env.*)`, `Read(./secrets/**)`). Testado com 7 casos sintéticos (arquivo/comando, positivo/negativo, incluindo falso-positivo `environment.md`/`enviar.envelope`) — todos corretos. Bug real encontrado e corrigido durante o teste: regex original só batia `.env`/`secrets/` no início da string ou após `/`, não após espaço — comandos Bash como `cat .env` (espaço antes do path) passavam batido. Corrigido pra `(^|[\s/])`.
+- [x] **(solução robusta — risco #14)** Toda referência ao `fast-context` concentrada em `.claude/rules/exploration.md`, incluindo a nota de kill-switch (apagar/renomear `.claude/agents/fast-context.md`).
 
 ## Fase 3 — Escalonamento de modelo
 
@@ -78,7 +76,7 @@ Docs de referência para cada fase:
 
 - [ ] No system prompt do subagent, instruir explicitamente: preferir `head_limit`/ranges pequenos nas ferramentas nativas de Grep/Read, nunca despejar arquivo inteiro quando uma faixa resolve.
 - [ ] Camada 1 (auto-contagem de turnos) já entra na Fase 1, junto com `maxTurns: 8` no frontmatter (mesmo sabendo do bug de não-enforcement).
-- [x] **(solução robusta — risco #4, camada 2)** Implementado antes do previsto: a Fase 0/rodada 2 já mostrou a Camada 1 (soft) falhar 1 em 3 vezes reais (stall silencioso sem `<final_answer>`), então a condição original ("só implementar se a Fase 7 mostrar falha") foi satisfeita antecipadamente. `.claude/scripts/limit_turns_hook.py` conta invocações de `Read|Grep|Glob` por invocação de subagent (chave = `transcript_path`, único por execução) e nega via `permissionDecision: "deny"` a partir da 11ª chamada. Configurado em `hooks.PreToolUse` no frontmatter do `fast-context.md`. Testado isoladamente com payload sintético (unit test, não invocação real — subagents de projeto não recarregam frontmatter dinamicamente na mesma sessão). **Falta validar em sessão nova** com invocação real do subagent.
+- [x] **(solução robusta — risco #4, camada 2)** Implementado antes do previsto: a Fase 0/rodada 2 já mostrou a Camada 1 (soft) falhar 1 em 3 vezes reais (stall silencioso sem `<final_answer>`), então a condição original ("só implementar se a Fase 7 mostrar falha") foi satisfeita antecipadamente. `.claude/scripts/limit_turns_hook.py` conta invocações de `Read|Grep|Glob` por invocação de subagent (chave = `transcript_path`, único por execução) e nega via `permissionDecision: "deny"` a partir da 11ª chamada. Configurado em `hooks.PreToolUse` no frontmatter do `fast-context.md`. **Validado em sessão nova com invocação real** (rodada 3, ver `go-no-go-analysis.md`): 11 tool calls, corte confirmado, `<final_answer confidence="low">` emitido sem nudge manual.
 
 ## Fase 5 — Prompt caching por estrutura
 
