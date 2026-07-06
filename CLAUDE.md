@@ -14,7 +14,7 @@ Referência de contexto: `transcricao-video-fastcontext.md` (transcrição de v�
 
 ## Status
 
-Projeto ainda não implementado — este é o setup inicial do repositório. Stack, comandos e estrutura de pastas serão definidos quando a implementação começar.
+Fase 0 (experimento mínimo) implementada: `.claude/agents/fast-context.md` (subagent enxuto, model Haiku) e `.claude/scripts/validate_citations.py` (validação determinística de citações). Ainda **não validado em uso real** — falta rodar as queries de comparação contra o agente `Explore` nativo antes de decidir se vale investir nas Fases 2-7. Ver `docs/ai/go-no-go-analysis.md`.
 
 Plano de estratégias de economia de contexto a implementar: ver `docs/ai/context-economy-strategies.md`.
 
@@ -22,7 +22,7 @@ Decisão de arquitetura (só Claude, sem infra externa, tudo nativo do Claude Co
 
 Plano de implementação passo a passo (fases 1-7, com checklist): ver `docs/ai/implementation-plan.md`. Pesquisa de feedback visual (statusLine/subagentStatusLine): ver `docs/ai/ui-feedback-statuslines.md`.
 
-Riscos e lacunas identificados (15 no total, com solução ou status de mitigação): ver `docs/ai/risks-and-gaps.md`. Fatos confirmados sobre a plataforma (schema de agent, bug do `maxTurns`, payload de statusLine, proteção de segredos): ver `docs/ai/claude-code-capabilities-verified.md`.
+Riscos e lacunas identificados (15 no total, com solução ou status de mitigação): ver `docs/ai/risks-and-gaps.md`. Fatos confirmados sobre a plataforma (schema de agent, bug do `maxTurns`, payload de statusLine, proteção de segredos): ver `docs/ai/claude-code-capabilities-verified.md`. Análise de custo/benefício e decisão de rodar um experimento mínimo antes do plano completo: ver `docs/ai/go-no-go-analysis.md`.
 
 ## Regras
 

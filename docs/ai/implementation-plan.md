@@ -9,8 +9,19 @@ Docs de referência para cada fase:
 - `ui-feedback-statuslines.md` — pesquisa de feedback visual
 - `risks-and-gaps.md` — revisão crítica que motivou os ajustes marcados como "(ajustado)" abaixo (agora com 15 riscos, incluindo os novos #7-#15)
 - `claude-code-capabilities-verified.md` — fatos confirmados via documentação oficial (schema de frontmatter, bug do `maxTurns`, payload de statusLine, comportamento do Grep, padrão de proteção de segredos)
+- `go-no-go-analysis.md` — análise crítica de custo/benefício, comparação com o projeto Python original, e a decisão de rodar a Fase 0 antes de comprometer com as Fases 2-7
 
-## Fase 1 — Subagent explorador ("discovery")
+## Fase 0 — Experimento mínimo (gate antes de investir nas Fases 2-7) ✅ implementado, aguardando validação
+
+**Objetivo:** testar a hipótese central (delegação pra Haiku economiza tokens sem perder qualidade) com o menor investimento possível, **antes** de construir escalonamento, hooks e statusline. Ver `go-no-go-analysis.md` para o raciocínio completo.
+
+- [x] Criar `.claude/agents/fast-context.md` **enxuto**: só o núcleo da Fase 1 (contrato estruturado, grounding verbatim, auto-contagem de turnos, reflection em confiança baixa, instrução de não citar segredos) — sem `fast-context-deep`, sem hooks, sem statusline.
+- [x] Criar `.claude/scripts/validate_citations.py` — versão determinística da validação `os.path.isfile()` do projeto Python de referência (risco #2/#3), rodada pelo **agente principal** depois de receber o `<final_answer>` do `fast-context` (não pelo próprio subagent, pra preservar a restrição de tools só-leitura). Testado manualmente: rejeita arquivo inexistente e faixa de linha inválida, aceita citação real.
+- [ ] Rodar 3-4 queries reais lado a lado: `fast-context` (Haiku) vs. agente `Explore` nativo do Claude Code vs. agente principal buscando direto — comparar tokens, tempo, e se a resposta estava certa.
+- [ ] Rodar o `validate_citations.py` no resultado de cada chamada ao `fast-context` durante o teste, pra já validar o script em uso real.
+- [ ] **Decisão go/no-go**: só prosseguir pras Fases 2-7 (escalonamento, hooks, statusline, harness completo) se o experimento mostrar ganho real sobre o `Explore` nativo e sobre busca direta. Se não mostrar, documentar o resultado em `go-no-go-analysis.md` e encerrar o projeto nesse ponto — não é fracasso, é a análise de custo/benefício se confirmando.
+
+## Fase 1 — Subagent explorador ("discovery") — conteúdo já incorporado na Fase 0 enxuta acima; fases abaixo só avançam se a Fase 0 for aprovada
 
 **Objetivo:** núcleo do projeto — estratégias #4 (isolamento de contexto) + #1 (toggle de modelo).
 
