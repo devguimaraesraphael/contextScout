@@ -4,12 +4,7 @@ A Claude Code subagent that explores a code repository and returns only the
 relevant excerpt (file + lines) to the main assistant — instead of letting
 the main assistant (the more expensive model) burn context doing
 grep/glob/file reads directly.
-
-Native reimplementation (no external infrastructure, just files Claude Code
-already knows how to interpret) of the **FastContext** concept
-(`microsoft/fastcontext`, now unavailable publicly).
-
-**[📖 Visual guide (interactive artifact, 7 languages)](https://claude.ai/code/artifact/9137bdb0-7f16-4b9a-b62b-dec7a4b28fb6)**
+ 
 
 ---
 
