@@ -138,3 +138,21 @@ Causa raiz: `transcript_path` e `session_id`, os dois campos usados como chave d
 ### Lição pro processo
 
 A rodada 3 validou o hook com **uma única invocação por sessão**, o que mascarou esse bug — reforça que "validar em sessão nova" não é suficiente por si só; é preciso testar múltiplas invocações do mesmo subagent na mesma sessão antes de considerar um mecanismo de estado (contador, cache, etc.) robusto.
+
+## Rodada 5 (pós-Fase 7): revisão final de escopo — o "GO" da rodada 3 foi bom demais
+
+Depois do baseline da Fase 7 (`eval/baseline-results-2026-07-06.md`) e de duas tentativas de correção nesta sessão, os 4 critérios de sucesso definidos no "veredito final" da rodada 3 precisam de correção — dois deles não se sustentaram numa amostra maior:
+
+| Critério da rodada 3 | Status revisado |
+|---|---|
+| 1. Zero alucinação de citação | **Mantido.** Todas as citações seguem batendo com o código real, inclusive no baseline da Fase 7. |
+| 2. Corte real de turnos (hook `PreToolUse`) | **Mantido, mas com lacuna nova.** O hook corta de verdade *tool calls* (Camada 2), mas não cobre o caso descoberto nesta sessão: o subagent para de responder (sem tool call, sem `<final_answer>`) num turno de raciocínio puro — a Camada 2 não intercepta isso porque não há tool call pra negar. Reproduzido 3/3 com perguntas amplas, não corrigido por ajuste de prompt (ver `risks-and-gaps.md`, risco #4). |
+| 3. Robustez a ambiguidade de path | **Derrubado.** Já revisado na Fase 7: o `fast-context` cometeu o mesmo erro de path (confidence="high" sobre o repositório errado) que a rodada 2 tinha atribuído só ao `Explore`. Mitigação aplicada (instrução de confirmar path via `Glob`) e validada com re-teste (N=1) — reduz a chance de recorrência no caso específico testado, mas não é mais um "diferencial" do `fast-context`, é uma correção de um bug que ele também tinha. |
+| 4. Contrato de saída estruturado (`confidence`) útil pra escalonamento | **Mantido, mas com ressalva grave.** O contrato funciona quando o subagent o segue — mas `confidence` autorrelatado já produziu `"high"` sobre uma resposta objetivamente errada (achado #3/#8, `risks-and-gaps.md`). O valor real do contrato não é "confiar no `confidence`", é forçar um formato auditável que a defesa em profundidade (ler citação antes de agir) consegue checar rapidamente — o critério de sucesso deveria ter sido escrito assim desde o início. |
+
+**Conclusão da revisão**: o "GO" da rodada 3 continua válido, mas por um escopo mais estreito do que os 4 critérios originais sugeriam. A proposta de valor formal do projeto foi reescrita em `CLAUDE.md` (seção "Escopo revisado") para refletir isso — resumo:
+
+- **Garantido**: custo mais barato (Haiku, não "menos tokens" — isso segue estruturalmente inverificável), higiene de contexto do agente principal, zero over-triggering em queries triviais, citação verbatim validada, corte real de tool calls, bloqueio de segredos, boa qualidade **só em perguntas pontuais e fechadas**.
+- **Não garantido, uso restrito por regra** (`.claude/rules/exploration.md`): confiança autorrelatada não substitui verificação manual (agora obrigatória mesmo com `confidence="high"`); perguntas amplas/abertas ("descreva todo o fluxo") não devem ser delegadas como estão — quebrar em perguntas pontuais antes.
+
+Isso não muda a decisão de manter o `fast-context` em produção (o valor real, ainda que mais estreito, se sustenta), mas muda como ele deve ser vendido e usado: ferramenta de lookup pontual com barato e contexto limpo, não motor de economia de tokens comprovada nem substituto confiável de verificação humana.
