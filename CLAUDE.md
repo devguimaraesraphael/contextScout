@@ -16,6 +16,8 @@ Referência de contexto: `transcricao-video-fastcontext.md` (transcrição de v�
 
 Projeto ainda não implementado — este é o setup inicial do repositório. Stack, comandos e estrutura de pastas serão definidos quando a implementação começar.
 
+Plano de estratégias de economia de contexto a implementar: ver `docs/ai/context-economy-strategies.md`.
+
 ## Regras
 
 - Sem segredos/credenciais em nenhum arquivo commitado.
