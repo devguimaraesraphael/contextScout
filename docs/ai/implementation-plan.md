@@ -79,13 +79,13 @@ Docs de referência para cada fase:
 - [ ] Camada 1 (auto-contagem de turnos) já entra na Fase 1, junto com `maxTurns: 8` no frontmatter (mesmo sabendo do bug de não-enforcement).
 - [x] **(solução robusta — risco #4, camada 2)** Implementado antes do previsto: a Fase 0/rodada 2 já mostrou a Camada 1 (soft) falhar 1 em 3 vezes reais (stall silencioso sem `<final_answer>`), então a condição original ("só implementar se a Fase 7 mostrar falha") foi satisfeita antecipadamente. `.claude/scripts/limit_turns_hook.py` conta invocações de `Read|Grep|Glob` por invocação de subagent (chave = `transcript_path`, único por execução) e nega via `permissionDecision: "deny"` a partir da 11ª chamada. Configurado em `hooks.PreToolUse` no frontmatter do `fast-context.md`. **Validado em sessão nova com invocação real** (rodada 3, ver `go-no-go-analysis.md`): 11 tool calls, corte confirmado, `<final_answer confidence="low">` emitido sem nudge manual.
 
-## Fase 5 — Prompt caching por estrutura
+## Fase 5 — Prompt caching por estrutura ✅ concluída (conclusão negativa — cache no subagent não é medível/observável)
 
-**Objetivo:** estratégia #2, ativar o cache automático do Claude Code por design.
+**Objetivo original:** estratégia #2, ativar o cache automático do Claude Code por design.
 
-- [ ] Manter o system prompt do `fast-context` e as regras de ativação em arquivos estáveis, que não são reescritos a cada sessão.
-- [ ] Evitar qualquer mecanismo que regenere esses arquivos dinamicamente por sessão (quebraria o cache hit).
-- [ ] **(solução robusta — risco #5)** Não afirmar o que não foi medido: tratar o ganho de cache no subagent explorador como hipótese até a Fase 7 medir de verdade (invocar `fast-context` duas vezes na mesma sessão, comparar custo de input reportado). Se não houver economia observável, corrigir esta fase pra "não atrapalha o cache do agente principal, mas não garante economia no subagent" em vez de "ativa cache por design".
+- [x] Confirmado: `fast-context.md`, `fast-context-deep.md` e `.claude/rules/exploration.md` são editados só manualmente (`git log` mostra só commits diretos, nenhum script escreve neles) — arquivos estáveis, não regenerados por sessão.
+- [x] Confirmado que nada nesse projeto regenera esses arquivos dinamicamente — condição estrutural pro cache hit do lado do Claude Code está satisfeita, na medida do que dá pra garantir sem acesso à implementação interna do cache.
+- [x] **(risco #5) Medido, não afirmado — resultado negativo/inconclusivo.** Invocado `fast-context` duas vezes na mesma sessão com prompt e pergunta idênticos: chamada 1 = 9.988 tokens/4 tool calls; chamada 2 = 11.052 tokens/3 tool calls. **A 2ª chamada não ficou mais barata** mesmo com uma tool call a menos — nenhum sinal de economia de cache. Causa provável: o `Agent` tool só expõe `subagent_tokens` como total combinado (não separa `cache_read_input_tokens` de input fresco), a mesma limitação de instrumentação já registrada nas rodadas 1-2 (`go-no-go-analysis.md`). **Conclusão ajustada conforme a contingência prevista nesta fase**: não dá pra afirmar "ativa cache por design" — o que se pode afirmar é que a estrutura de arquivos estáveis não *atrapalha* um cache hipotético do lado da plataforma, mas nenhuma economia foi observável com a instrumentação disponível.
 
 ## Fase 6 — Feedback visual (statusLine + subagentStatusLine)
 
