@@ -42,10 +42,27 @@ quando vier vazio — esse é o caso fácil, não o mais perigoso), escalone **u
 vez** pra `fast-context-deep` (mesmo tools/system prompt, `model: sonnet`) com a
 mesma pergunta original.
 
+**Falha sem `<final_answer>` nenhum (achado 2026-07-06)**: se a resposta do
+`fast-context` terminar em texto de raciocínio solto, sem nenhum bloco
+`<final_answer>` (ex: "Turno N/8: vou verificar mais uma coisa..." e nada depois),
+trate isso como equivalente a `confidence="low"` pro efeito de escalonamento — **não**
+como resposta vazia a ignorar. Causa raiz confirmada (3/3 reproduções com a mesma
+pergunta ampla, mesmo após reforçar a instrução do subagent duas vezes): o modelo
+anuncia uma próxima ação sem executá-la na mesma resposta, e o loop do subagent
+termina ali por não haver tool call. Instrução no system prompt **não resolveu** —
+tratar como limitação estrutural, não como algo corrigível só com redação melhor.
+
+Ao escalonar por esse motivo, **reformule a pergunta original de forma mais estreita**
+antes de reenviar pra `fast-context-deep` (ex: trocar "descreva passo a passo todo o
+fluxo X, citando cada arquivo" por uma pergunta focada num único ponto do fluxo) — perguntas
+amplas e abertas ("descreva com calma todo o fluxo", "citando cada arquivo relevante")
+são o gatilho conhecido desse estouro; perguntas fechadas com escopo claro não
+mostraram esse padrão nos testes.
+
 Teto de escalonamento: no máximo 1 salto. Se `fast-context-deep` também voltar com
-`confidence != "high"`, pare — não escalone de novo, não repita. Devolva a resposta
-pro fluxo principal com aviso explícito de baixa confiança pro usuário, em vez de
-insistir num loop caro.
+`confidence != "high"` (ou sem `<final_answer>` nenhum), pare — não escalone de novo,
+não repita. Devolva a resposta pro fluxo principal com aviso explícito de baixa
+confiança pro usuário, em vez de insistir num loop caro.
 
 ## Convenção de nomenclatura pro statusLine (Fase 6)
 
