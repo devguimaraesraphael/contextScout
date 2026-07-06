@@ -1,6 +1,6 @@
 # Discovery: implementação de referência (Cirius1792/fastcontext)
 
-Repositório: https://github.com/Cirius1792/fastcontext (mirror/fork do `microsoft/fastcontext` original, que está indisponível publicamente). Clonado como projeto irmão em `/mnt/backup/github/fastcontext` (fora deste repo — não é submódulo nem foi vendorizado).
+Repositório: https://github.com/Cirius1792/fastcontext (mirror/fork do `microsoft/fastcontext` original, que está indisponível publicamente). Clonado como projeto irmão em `/mnt/backup/github/fastContextMicrosoft` (fora deste repo — não é submódulo nem foi vendorizado).
 
 Licença: MIT, copyright Microsoft Corporation. Se qualquer código daqui for reaproveitado/adaptado, manter o aviso de copyright.
 

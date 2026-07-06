@@ -1,6 +1,6 @@
 # Baseline de queries — Fase 7 (validação end-to-end)
 
-Repositório de teste: `/mnt/backup/github/fastcontext` (implementação de referência
+Repositório de teste: `/mnt/backup/github/fastContextMicrosoft` (implementação de referência
 Python do FastContext original, fora deste projeto). Escolhido porque já foi usado
 nas rodadas 1-4 (familiaridade com o código, gabarito fácil de conferir à mão) e
 tem múltiplos módulos pequenos — bom fit pro caso de uso do `fast-context`.

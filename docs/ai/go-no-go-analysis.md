@@ -50,7 +50,7 @@ Rodar a **Fase 0 (experimento mínimo)** antes de qualquer coisa das Fases 2-7: 
 
 **Limitação de setup descoberta**: subagents de projeto (`.claude/agents/*.md`) não são carregados dinamicamente durante uma sessão em andamento — o `fast-context` só aparece como `subagent_type` numa sessão nova do Claude Code, depois de reiniciar. Essa rodada usou um **proxy**: agente `general-purpose` com `model: haiku` e o mesmo system prompt do `fast-context.md` injetado como instrução. Isso aproxima o comportamento mas não testa o `maxTurns`/tool-allowlist reais.
 
-Repositório de teste: o próprio clone do projeto Python original (`/mnt/backup/github/fastcontext`), só leitura.
+Repositório de teste: o próprio clone do projeto Python original (`/mnt/backup/github/fastContextMicrosoft`), só leitura.
 
 | Query | Proxy fast-context (Haiku) | Explore nativo |
 |---|---|---|
@@ -71,7 +71,7 @@ O sinal de qualidade é bom (zero alucinação, formato seguido corretamente), m
 
 ## Resultados da rodada 2 (subagent real, sessão reiniciada)
 
-Sessão nova confirmou o `fast-context` registrado e invocável por nome (`subagent_type: fast-context`, distinto de `general-purpose`). Mesmo repositório de teste (`/mnt/backup/github/fastcontext`), mesmas 3 queries da rodada 1, agora lado a lado com o `Explore` nativo real (não proxy).
+Sessão nova confirmou o `fast-context` registrado e invocável por nome (`subagent_type: fast-context`, distinto de `general-purpose`). Mesmo repositório de teste (`/mnt/backup/github/fastContextMicrosoft`), mesmas 3 queries da rodada 1, agora lado a lado com o `Explore` nativo real (não proxy).
 
 | Query | fast-context real (Haiku) | Explore nativo (real) |
 |---|---|---|
@@ -106,7 +106,7 @@ Com isso, a decisão go/no-go das Fases 2-7 passa a depender de validar o hook n
 
 ## Validação do hook em sessão nova (rodada 3)
 
-Sessão nova, invocação real do `fast-context` (não proxy, não unit test) com uma pergunta deliberadamente ampla (7 sub-perguntas sobre `/mnt/backup/github/fastcontext`) para forçar a passagem dos 10 tool calls.
+Sessão nova, invocação real do `fast-context` (não proxy, não unit test) com uma pergunta deliberadamente ampla (7 sub-perguntas sobre `/mnt/backup/github/fastContextMicrosoft`) para forçar a passagem dos 10 tool calls.
 
 Resultado: o subagent fez **11 tool calls** e parou — o arquivo de contador (`/tmp/fast-context-turns/<hash>.count`) confirma `11`, batendo exatamente com `tool_uses: 11` no usage retornado. O hook negou a 11ª chamada de ferramenta e o modelo emitiu `<final_answer confidence="low">` imediatamente, citando explicitamente "Atingi o limite de 10 tool calls" e listando quais das 7 sub-perguntas ficaram sem resposta — **sem precisar de nudge manual via `SendMessage`**, diferente do stall observado na rodada 2. As 2 citações que conseguiu confirmar (agent.py, agent_factory.py, system.md) são verbatim corretas.
 

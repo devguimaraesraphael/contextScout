@@ -103,7 +103,7 @@ Docs de referência para cada fase:
 
 **Objetivo:** confirmar o ganho de tokens/tempo prometido pela estratégia, mirror do teste que o vídeo de referência fez.
 
-- [x] Repositório de teste: `/mnt/backup/github/fastcontext` (já usado nas rodadas 1-4, gabarito fácil de conferir à mão).
+- [x] Repositório de teste: `/mnt/backup/github/fastContextMicrosoft` (já usado nas rodadas 1-4, gabarito fácil de conferir à mão).
 - [x] **(solução robusta — risco #6)** Criado `docs/ai/eval/baseline-queries.md`: 4 queries que deveriam disparar (Q1-Q4, multi-arquivo) + 2 triviais que não deveriam (Q5-Q6), cada uma com gabarito conferido manualmente por leitura direta.
 - [x] Rodado Q1-Q4 em modo "com delegação" (fast-context real) e "sem delegação" (agente principal direto); Q5-Q6 em modo natural. Resultados em `docs/ai/eval/baseline-results-2026-07-06.md`.
 - [x] Tabela de resultados registrada com tokens/tool_uses/duração/acerto contra gabarito por query.

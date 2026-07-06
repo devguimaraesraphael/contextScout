@@ -1,7 +1,7 @@
 # Resultados do baseline — 2026-07-06
 
 Ver queries e gabarito em `baseline-queries.md`. Rodado nesta sessão, mesmo repositório
-de referência (`/mnt/backup/github/fastcontext`) usado nas rodadas 1-4.
+de referência (`/mnt/backup/github/fastContextMicrosoft`) usado nas rodadas 1-4.
 
 ## Q1-Q4, modo "com delegação" (fast-context real, Haiku)
 
@@ -9,7 +9,7 @@ de referência (`/mnt/backup/github/fastcontext`) usado nas rodadas 1-4.
 |---|---|---|---|---|---|---|
 | Q1 — limite de turnos | high | 2 | 6 | 11.725 | 24,6s | **Sim** — agent.py:38-76 (inclui a faixa exata do gabarito, 44-54) e cli.py:23, ambos verbatim corretos. |
 | Q2 — templating system prompt | high | 4 | 8 | 14.470 | 23,6s | **Sim** — utils.py:11-17, 19-33, 36-53 e ainda foi além do gabarito citando system.md:33-41 (o template em si, não previsto no gabarito mas correto e relevante). |
-| Q3 — validação de citações | high | 3 | 11 | 20.857 | 33,4s | **Não — falha real.** Respondeu sobre `/mnt/backup/github/fastContext` (este projeto, `validate_citations.py`) em vez de `/mnt/backup/github/fastcontext` (repo de referência, `utils.py:parse_citations`/`format_citations`). Confusão de path por case-sensitivity (`fastContext` vs `fastcontext`), apesar do prompt ter afirmado o path completo e correto. `confidence="high"` **calibrado errado** — reportou alta confiança sobre a resposta errada. |
+| Q3 — validação de citações | high | 3 | 11 | 20.857 | 33,4s | **Não — falha real.** Respondeu sobre `/mnt/backup/github/fastContext` (este projeto, `validate_citations.py`) em vez de `/mnt/backup/github/fastContextMicrosoft` (repo de referência, `utils.py:parse_citations`/`format_citations`). Confusão de path por case-sensitivity (`fastContext` vs `fastcontext`), apesar do prompt ter afirmado o path completo e correto. `confidence="high"` **calibrado errado** — reportou alta confiança sobre a resposta errada. |
 | Q4 — registro de ferramentas | high | 3 | 11 | 14.443 | 28,8s | **Sim** — agent_factory.py:56-66 (bate exato com o gabarito) mais read.py/glob.py como bônus (não pedido, mas correto e útil). |
 
 ## Q1-Q4, modo "sem delegação" (agente principal, direto)
