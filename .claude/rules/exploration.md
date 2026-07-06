@@ -46,3 +46,11 @@ Teto de escalonamento: no máximo 1 salto. Se `fast-context-deep` também voltar
 `confidence != "high"`, pare — não escalone de novo, não repita. Devolva a resposta
 pro fluxo principal com aviso explícito de baixa confiança pro usuário, em vez de
 insistir num loop caro.
+
+## Convenção de nomenclatura pro statusLine (Fase 6)
+
+O payload do `subagentStatusLine` não expõe o tipo/model do subagent, só o `label`
+(igual ao parâmetro `description` passado na chamada da ferramenta `Agent`). Por
+isso, ao invocar `fast-context` ou `fast-context-deep`, prefixe a `description`
+com o nome do agente (ex: `"fast-context: onde fica a lógica de auth?"`) — sem
+isso, a linha de status mostra um texto genérico sem indicar qual modelo está rodando.

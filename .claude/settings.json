@@ -25,5 +25,13 @@
         ]
       }
     ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "python3 $CLAUDE_PROJECT_DIR/.claude/scripts/statusline.py"
+  },
+  "subagentStatusLine": {
+    "type": "command",
+    "command": "python3 $CLAUDE_PROJECT_DIR/.claude/scripts/subagent_statusline.py"
   }
 }

@@ -87,18 +87,17 @@ Docs de referência para cada fase:
 - [x] Confirmado que nada nesse projeto regenera esses arquivos dinamicamente — condição estrutural pro cache hit do lado do Claude Code está satisfeita, na medida do que dá pra garantir sem acesso à implementação interna do cache.
 - [x] **(risco #5) Medido, não afirmado — resultado negativo/inconclusivo.** Invocado `fast-context` duas vezes na mesma sessão com prompt e pergunta idênticos: chamada 1 = 9.988 tokens/4 tool calls; chamada 2 = 11.052 tokens/3 tool calls. **A 2ª chamada não ficou mais barata** mesmo com uma tool call a menos — nenhum sinal de economia de cache. Causa provável: o `Agent` tool só expõe `subagent_tokens` como total combinado (não separa `cache_read_input_tokens` de input fresco), a mesma limitação de instrumentação já registrada nas rodadas 1-2 (`go-no-go-analysis.md`). **Conclusão ajustada conforme a contingência prevista nesta fase**: não dá pra afirmar "ativa cache por design" — o que se pode afirmar é que a estrutura de arquivos estáveis não *atrapalha* um cache hipotético do lado da plataforma, mas nenhuma economia foi observável com a instrumentação disponível.
 
-## Fase 6 — Feedback visual (statusLine + subagentStatusLine)
+## Fase 6 — Feedback visual (statusLine + subagentStatusLine) ✅ implementada, pendente confirmação visual do usuário
 
 **Objetivo:** visibilidade de qual agente está ativo e quantos tokens cada um gastou, sem custo de token adicional.
 
 - [x] Pesquisar viabilidade (`ui-feedback-statuslines.md`) — confirmado: multi-linha suportado, posição só rodapé, `subagentStatusLine` é o campo certo para dados por-subagent.
-- [x] **Payload do `statusLine` principal confirmado via documentação oficial** (ver `claude-code-capabilities-verified.md`): `cost.total_cost_usd`, `context_window.total_input_tokens`/`total_output_tokens`/`used_percentage`, `model.id`/`display_name`, entre outros — já dá pra escrever a linha do modelo **dev** sem depender da captura de debug.
-- [ ] **Ainda pendente**: payload do `subagentStatusLine` (por-subagent) não foi confirmado por essa pesquisa — continua precisando reabrir `/hooks` (ou reiniciar) pra forçar reload do `settings.local.json` de debug e capturar o payload real recebido via stdin especificamente por esse campo.
-- [ ] Com o payload do `subagentStatusLine` confirmado, escrever o script final:
-  - `statusLine`: barra "FastCode Activate" + linha do modelo **dev** (nome, effort, tokens/custo do turno)
-  - `subagentStatusLine`: linha do modelo **discovery** (nome, effort, tokens da chamada), visível no painel de agentes enquanto o `fast-context` roda
-- [ ] Remover o capturador de debug de `settings.local.json` e substituir pelo script definitivo.
-- [ ] Validar visualmente rodando uma query que dispare o `fast-context` e conferir se as duas linhas aparecem corretamente.
+- [x] **Payload do `statusLine` principal confirmado**, incluindo detalhes que a doc oficial sozinha não deixava claro: `effort.level` existe como campo próprio (não só dentro de `model`), e `cache_read_input_tokens` fica aninhado em `context_window.current_usage`, não no nível raiz de `context_window`.
+- [x] **Payload do `subagentStatusLine` confirmado** via captura real do debug capturer que já estava em `settings.local.json` (dados de sessões anteriores, inclusive desta): campo `tasks` (lista), cada item com `id` (bate com o `agent_id` do payload do `PreToolUse`), `type`, `status` (`running`/`completed`), `description`/`label`, `startTime`, `tokenCount`, `tokenSamples`, `cwd`. **Não há campo de model/agent_type nesse payload** — só o hook `PreToolUse` recebe isso.
+- [x] Scripts finais escritos: `.claude/scripts/statusline.py` (barra "FastCode Activate" + modelo dev, effort, custo, uso de contexto, cache read) e `.claude/scripts/subagent_statusline.py` (uma linha por subagent `running`, com `label` + tokens ao vivo). Testados contra payloads reais capturados nesta sessão — output correto, incluindo fix de formatação (`1000.0k` → `1.0M` pra `context_window_size`).
+- [x] Como o payload do subagent não expõe o model, adotada convenção documentada em `.claude/rules/exploration.md`: prefixar a `description` da chamada `Agent` com o nome do agente (`"fast-context: ..."`) pra aparecer legível na linha de status.
+- [x] Capturador de debug removido de `settings.local.json` (voltou a `{}`); scripts definitivos configurados em `settings.json` (**projeto, committed** — decisão do usuário: é parte da feature, não preferência pessoal).
+- [ ] **Validação visual pendente**: rodei uma query real disparando o `fast-context` com a convenção de nomenclatura; preciso que o usuário confirme visualmente se as duas linhas aparecem corretamente na UI (não tenho como observar a renderização do statusLine daqui).
 
 ## Fase 7 — Validação end-to-end
 
