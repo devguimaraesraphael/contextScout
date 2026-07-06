@@ -1,10 +1,57 @@
-# ContextScout
+<div align="center">
 
-A Claude Code subagent that explores a code repository and returns only the
-relevant excerpt (file + lines) to the main assistant — instead of letting
-the main assistant (the more expensive model) burn context doing
-grep/glob/file reads directly.
- 
+# 🔎 ContextScout
+
+**A cheap, isolated search subagent for Claude Code — so your expensive model never burns context on grep/glob/file exploration again.**
+
+[![Built for Claude Code](https://img.shields.io/badge/built%20for-Claude%20Code-6366f1?style=flat-square)](https://claude.com/claude-code)
+[![Scout model](https://img.shields.io/badge/scout-Haiku-B8701F?style=flat-square)]()
+[![Escalation model](https://img.shields.io/badge/escalation-Sonnet-34459A?style=flat-square)]()
+[![No infrastructure](https://img.shields.io/badge/infrastructure-none-2ea44f?style=flat-square)]()
+[![Status](https://img.shields.io/badge/status-active-brightgreen?style=flat-square)]()
+
+**[📖 Interactive visual guide (7 languages)](https://claude.ai/code/artifact/9137bdb0-7f16-4b9a-b62b-dec7a4b28fb6)** · [What it is](#what-it-is) · [Install](#install) · [For non-programmers](#for-non-programmers) · [For programmers](#for-programmers)
+
+</div>
+
+---
+
+## What it is
+
+`ContextScout` is a native reimplementation of the **FastContext** concept
+(originally `microsoft/fastcontext`, now unavailable publicly): a subagent
+dedicated to exploring a code repository and handing back only the relevant
+excerpt — **file + exact line range** — instead of letting the main agent
+(the more expensive model) spend its own context doing `grep`/`glob`/file
+reads directly.
+
+No servers, no external services, no dependencies to install — it's a set of
+text files that Claude Code already knows how to interpret.
+
+| | |
+|---|---|
+| **Search agent** | `context-scout` — runs on Haiku, has only `Read`/`Grep`/`Glob`, never edits or executes anything |
+| **Escalation agent** | `context-scout-deep` — same body, Sonnet, used at most once when confidence is low |
+| **Output contract** | Verbatim citation (`file:line`) + self-reported confidence, never a loose summary |
+| **Defense in depth** | Real tool-call cutoff via hook, secret-file blocking, mandatory citation spot-check before acting |
+| **Cost model** | Delegated search runs on a cheaper model — savings in **dollars**, not a token-count claim |
+
+---
+
+## Install
+
+No program to download, no account to create — it's a single folder.
+
+```bash
+cp -r .claude /path/to/your/project/
+```
+
+Already have a `.claude/` folder in the target project? **Don't overwrite
+it** — merge the `agents/`, `rules/`, `scripts/`, and `settings.json`
+contents by hand (see [For programmers](#for-programmers)).
+
+Restart the Claude Code session afterwards — subagents and rules are only
+picked up on a new session.
 
 ---
 
@@ -16,38 +63,23 @@ A cheap, fast search intern who scouts the code before the expensive
 assistant has to do it itself — and only hands back the exact page, already
 highlighted.
 
-### How to install
-
-No program to download, no account to create. Just copy one folder.
-
-1. Copy the whole **`.claude/`** folder from this project into the root
-   folder of your project (wherever you already use Claude Code).
-2. If your project already has its own `.claude/` folder, copy file by file
-   instead of overwriting the whole folder (ask a programmer on your team to
-   do this part — see the section below).
-3. Close and reopen the Claude Code session in your project.
-
-Done — the scout is now available.
-
 ### How to use it
 
-You don't need to learn a special way of asking. Just ask your question
-naturally, your own way. Two ways to trigger it:
+You don't need to learn a special way of asking — just ask your question
+naturally. Two ways it triggers:
 
-- **Automatic**: the main assistant decides on its own whether it's worth
-  calling the scout, based on the question.
-- **Explicit** (more reliable): ask by naming it — *"use context-scout to
-  find where X is"*.
+- **Automatic** — the main assistant decides on its own whether the question
+  is worth delegating.
+- **Explicit** (more reliable) — ask by naming it: *"use context-scout to
+  find where X is."*
 
 Noticing whether a question is too broad and needs to be split into smaller
-pieces is the main assistant's responsibility, not yours.
+pieces is the main assistant's job, not yours.
 
-### Full visual guide
-
-A guide with a flow diagram, question examples, and the honest list of what
-you can trust vs. what needs care is available as an interactive artifact —
-see the link at the top of this README, or ask Claude Code to "create an
-artifact explaining ContextScout for non-programmers" to generate a new one.
+📖 For the full walkthrough — flow diagram, good/bad question examples, and
+the honest "what you can trust vs. what needs care" list — see the
+**[interactive visual guide](https://claude.ai/code/artifact/9137bdb0-7f16-4b9a-b62b-dec7a4b28fb6)**
+linked at the top of this README.
 
 ---
 
@@ -65,10 +97,10 @@ Two native Claude Code agents, not two separate processes:
   (1-hop ceiling). **Body kept identical to `context-scout.md`, except the
   `model` field** — edit one, edit the other.
 
-Activation orchestrated by `.claude/rules/exploration.md`: when to delegate,
-when not to, self-check gate before delegating, defense in depth (verify a
-citation before acting even with `confidence="high"`), escalation rule, and
-the `subagentStatusLine` naming convention.
+Activation is orchestrated by `.claude/rules/exploration.md`: when to
+delegate, when not to, the self-check gate before delegating, defense in
+depth (verify a citation before acting even with `confidence="high"`), the
+escalation rule, and the `subagentStatusLine` naming convention.
 
 ### File inventory
 
@@ -84,7 +116,7 @@ the `subagentStatusLine` naming convention.
 | `.claude/scripts/subagent_statusline.py` | `subagentStatusLine` — one line per `running` subagent, with `label` + live tokens. |
 | `.claude/settings.json` | Wires up the hooks above + `statusLine`/`subagentStatusLine` + secret `deny` rules. **Committed** — part of the feature, not a personal preference. |
 
-### Installation
+### Installation (detail)
 
 ```bash
 cp -r /mnt/backup/github/ContextScout/.claude /path/to/your/project/
@@ -100,19 +132,11 @@ Project subagents (`.claude/agents/*.md`) are only reloaded in a new session
 
 ### Guaranteed vs. non-guaranteed scope
 
-See `CLAUDE.md` (section "Revised scope") for the summary, and the documents
-below for the detail with evidence:
-
-- `docs/ai/eval/baseline-results-2026-07-06.md` — end-to-end validation
-  baseline.
-- `docs/ai/risks-and-gaps.md` — 15 identified risks, with mitigation status
-  (two remain unmitigated at the source: confidence calibration and turn
-  blowout on broad questions — both contained via the usage rule in
-  `exploration.md`, not fixed in the subagent itself).
-- `docs/ai/go-no-go-analysis.md` — full decision history, including negative
-  findings and how each was handled (or not).
-- `docs/ai/claude-code-capabilities-verified.md` — confirmed platform facts
-  (agent schema, the `maxTurns` bug, statusLine payload).
+Summarized in `CLAUDE.md` ("Revised scope"). The evidence behind each claim
+(baseline results, the 15 identified risks with mitigation status, full
+go/no-go decision history, confirmed platform facts) lives under `docs/ai/`
+locally — that folder is intentionally **not versioned** (see
+`.gitignore`), so it won't appear if you're browsing this repo on GitHub.
 
 ### Kill-switch
 
@@ -125,3 +149,11 @@ to the subagent is concentrated in `.claude/rules/exploration.md`.
 - No secrets/credentials in any committed file.
 - `CLAUDE.local.md` and `.claude/settings.local.json` are personal — never
   commit them (see `.gitignore`).
+
+---
+
+<div align="center">
+
+Suggested GitHub topics: `claude-code` `subagent` `ai-agents` `context-engineering` `llm-tooling`
+
+</div>
