@@ -20,6 +20,8 @@ Plano de estratégias de economia de contexto a implementar: ver `docs/ai/contex
 
 Decisão de arquitetura (só Claude, sem infra externa, tudo nativo do Claude Code): ver `docs/ai/architecture-decision-native-subagent.md`.
 
+Plano de implementação passo a passo (fases 1-7, com checklist): ver `docs/ai/implementation-plan.md`. Pesquisa de feedback visual (statusLine/subagentStatusLine): ver `docs/ai/ui-feedback-statuslines.md`.
+
 ## Regras
 
 - Sem segredos/credenciais em nenhum arquivo commitado.
