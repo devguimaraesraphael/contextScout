@@ -46,10 +46,21 @@ baseline, não como resultado positivo do agente principal.**
 4. **3 de 4 queries "deveria disparar" tiveram citação verbatim correta e completa**, muitas vezes indo além do gabarito com contexto adicional relevante (Q2, Q4) — sinal de qualidade que se mantém das rodadas anteriores.
 5. **Comparação "main direto vs. fast-context" ficou inconclusiva por desenho do teste** (main já tinha contexto quente) — não é um resultado, é uma lacuna metodológica registrada para não ser mal-interpretada como "main sempre mais barato".
 
-## Ação de acompanhamento sugerida (não implementada nesta rodada)
+## Ação de acompanhamento — implementada e validada (rodada 5)
 
-Dado o achado #2 (falha de path também no `fast-context`), considerar adicionar ao
-system prompt do subagent uma instrução explícita: "confirme o path exato do
-repositório com um `Glob` ou `Read` do diretório raiz antes de assumir case/nome,
-especialmente quando dois diretórios com nomes parecidos possam existir". Não
-implementado agora — fica registrado como próximo passo, não como parte do go/no-go.
+Dado o achado #2 (falha de path também no `fast-context`), foi adicionada uma instrução
+explícita ao system prompt de `fast-context.md`/`fast-context-deep.md` (mesma linha nos
+dois, corpo mantido idêntico): "se a pergunta menciona um caminho de repositório/diretório
+específico, confirme o path exato com um `Glob` do diretório raiz antes de assumir case ou
+nome".
+
+**Re-teste de Q3 com a instrução nova**: mesma pergunta (validação de citações), mesmo
+repositório de referência, prompt reforçando o case exato do path. Resultado:
+`confidence="high"`, `files_found=1`, citação correta —
+`fastContextMicrosoft/src/fastcontext/agent/utils.py:90-100` (`format_citations`,
+`os.path.isfile`), sem confundir com este projeto. `tool_uses=4`, `subagent_tokens=15846`,
+`28,2s`.
+
+**Ressalva**: N=1 reteste, não é prova estatística de que o erro de case nunca mais vai
+acontecer — só confirma que a instrução muda o comportamento no caso concreto que falhou
+antes. Fica como mitigação registrada, não como garantia.
