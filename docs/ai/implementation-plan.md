@@ -21,33 +21,44 @@ Docs de referência para cada fase:
 - [ ] Escrever o system prompt do agent (corpo do arquivo, abaixo do frontmatter), adaptando o `system.md` da referência:
   - papel: especialista em exploração read-only
   - guidelines de busca (largo → estreito, múltiplas estratégias de nome, checar convenções diferentes)
-  - contrato de saída obrigatório: explicação opcional de até 50 palavras + bloco `<final_answer>` com `arquivo:linha_inicio-linha_fim`
   - nunca devolver o histórico de navegação, só o resultado final
-- [ ] **(ajustado — risco #2)** Instruir o subagent a reconfirmar cada citação com uma leitura rápida antes de finalizar (evitar devolver caminho/linha não verificado — a implementação de referência valida isso em código com `os.path.isfile`, aqui só dá pra pedir via prompt, mas é melhor que nada).
-- [ ] **(ajustado — risco #3)** Instruir o subagent a reportar confiança/completude junto com o `<final_answer>` (ex: "N arquivos encontrados via M estratégias de busca, confiança alta/média/baixa") — não só o bloco de citações puro.
-- [ ] Testar com 2-3 queries reais num repositório (ex: "onde fica a lógica de autenticação?") e conferir se o formato de saída bate com o esperado.
+- [ ] **(solução robusta — risco #3)** Contrato de saída estruturado, não texto livre:
+  ```
+  <final_answer confidence="high|medium|low" strategies_used="glob,grep,read" files_found="N">
+  /caminho/arquivo.py:10-15
+  > trecho verbatim das linhas citadas (ver próximo item)
+  </final_answer>
+  ```
+  Definir no próprio system prompt os critérios de `confidence`: `high` = achou a definição exata do símbolo perguntado; `medium` = achou arquivos relacionados mas sem match exato ou via padrão amplo; `low` = poucos/nenhum match forte, baseado em suposição de convenção de nome.
+- [ ] **(solução robusta — risco #2)** Grounding por citação literal: exigir um trecho verbatim do arquivo junto de cada `arquivo:linha` (não só o range) — força o subagent a ter lido aquele trecho de fato. Complementar: instruir "antes do `<final_answer>`, faça uma chamada de Read em cada citação pra confirmar que existe e bate com o esperado" (equivalente ao `os.path.isfile` da referência, via tool call real).
+- [ ] **(solução robusta — risco #4, camada 1)** Auto-contagem de turnos no próprio raciocínio: "declare seu turno atual (Turno N/8); ao chegar no 8, você DEVE emitir `<final_answer>` mesmo que incompleto, com `confidence=\"low\"`".
+- [ ] Testar com 2-3 queries reais num repositório (ex: "onde fica a lógica de autenticação?") e conferir se o formato estruturado, o grounding e a auto-contagem funcionam como esperado.
 
 ## Fase 2 — Ativação explícita e regras
 
 **Objetivo:** garantir que o subagent seja realmente usado (o vídeo de referência mostrou que ativação implícita de skill não é confiável).
 
-- [ ] Adicionar regra em `CLAUDE.md` (ou `.claude/rules/exploration.md`): sempre que uma tarefa exigir localizar código em mais de um arquivo ou seguir lógica entre módulos, invocar `fast-context` explicitamente antes de editar/responder.
-- [ ] **(ajustado — risco #1)** Documentar quando **não** usar, com o mesmo peso que a regra de quando usar (mirror do `SKILL.md` de referência): arquivo já lido nesta sessão, grep único num arquivo já conhecido, tarefa de escrita pura sem exploração. Isso não é opcional/nice-to-have — sem esse critério, a regra de "sempre invocar" aumenta o consumo de tokens em buscas triviais em vez de reduzir.
+- [ ] **(solução robusta — risco #1)** Adicionar regra em `CLAUDE.md` (ou `.claude/rules/exploration.md`) com critério **simétrico**, com exemplos concretos dos dois lados (few-shot ancora melhor que regra abstrata):
+  - **Usar**: localização desconhecida, lógica atravessando >2 arquivos/módulos, "como funciona X", análise de impacto ("o que quebra se eu mudar Y").
+  - **Não usar**: arquivo já lido nesta sessão, grep único num arquivo já conhecido, edição pura sem exploração, símbolo exato já visível no contexto atual.
+- [ ] **(solução robusta — risco #1)** Gate de auto-checagem obrigatório antes de delegar: instruir o agente principal a se perguntar explicitamente "eu já sei o arquivo:linha exato pra isso?" antes de invocar `fast-context` — se sim, pula a delegação.
+- [ ] Defesa em profundidade pro risco #2: regra pra o agente principal sempre fazer uma leitura rápida de pelo menos uma citação recebida antes de editar em cima dela.
 
 ## Fase 3 — Escalonamento de modelo
 
 **Objetivo:** reforçar a estratégia #1 sem travar num único modelo fixo.
 
-- [ ] Definir uma segunda variante do agent (ex: `fast-context-deep` com `model: sonnet`, mesmo tools/system prompt) para repositórios grandes/complexos ou quando o Haiku retornar `<final_answer>` vazio/baixa confiança.
-- [ ] **(ajustado — risco #3)** Documentar no `CLAUDE.md`/regra a condição de escalonamento cobrindo os dois casos: `<final_answer>` **vazio** OU confiança **baixa/média reportada pelo próprio subagent** (depende do ajuste da Fase 1 de reportar confiança) — não só o caso vazio, que é o mais fácil de detectar mas não o mais perigoso.
+- [ ] Definir uma segunda variante do agent (ex: `fast-context-deep` com `model: sonnet`, mesmo tools/system prompt) para repositórios grandes/complexos.
+- [ ] **(solução robusta — risco #3)** Regra de escalonamento baseada no formato estruturado da Fase 1: escalona pra `fast-context-deep` quando `confidence != "high"` **ou** `files_found` parecer baixo pro escopo da pergunta — não só quando `<final_answer>` vier vazio, que é o caso mais fácil de detectar mas não o mais perigoso.
+- [ ] Calibração ao longo do tempo: a Fase 7 registra `confidence` reportado vs. corretude real (contra o gabarito manual) — transforma "confiança" de vibe em sinal calibrado.
 
 ## Fase 4 — Limite de turnos e caps de saída
 
 **Objetivo:** estratégia #6 (cap de tamanho de saída) e prevenção de loop de busca gastando tokens à toa.
 
 - [ ] No system prompt do subagent, instruir explicitamente: preferir `head_limit`/ranges pequenos nas ferramentas nativas de Grep/Read, nunca despejar arquivo inteiro quando uma faixa resolve.
-- [ ] Definir um limite de turnos de exploração razoável na descrição/instruções do agent (mirror do `--max-turns` da referência) — se não convergir, forçar resposta final com o que foi encontrado até então.
-- [ ] **(ajustado — risco #4)** Documentar explicitamente que esse limite é uma instrução de prompt, não um corte de código — não existe campo de frontmatter que force isso hoje. Revisar na Fase 7 se o comportamento observado bate com o esperado (o subagent realmente para, ou continua buscando além do razoável?).
+- [ ] Camada 1 (auto-contagem de turnos) já entra na Fase 1 — aqui só formalizar o número de turnos padrão (ex: 8) na descrição do agent.
+- [ ] **(solução robusta — risco #4, camada 2, condicional)** Investigar via captura de debug (mesmo método usado pro statusLine) se o payload de um hook `PreToolUse` identifica *qual agente* (main vs. subagent) disparou a tool call. Se sim, implementar um hook `PreToolUse` em `Read|Grep|Glob` escopado ao `fast-context` que conta invocações e nega (`permissionDecision: "deny"`) passado o limite, como backstop real além da auto-contagem. **Só implementar essa camada se a Fase 7 mostrar que a Camada 1 (soft) não é confiável na prática** — não implementar preventivamente.
 
 ## Fase 5 — Prompt caching por estrutura
 
@@ -55,7 +66,7 @@ Docs de referência para cada fase:
 
 - [ ] Manter o system prompt do `fast-context` e as regras de ativação em arquivos estáveis, que não são reescritos a cada sessão.
 - [ ] Evitar qualquer mecanismo que regenere esses arquivos dinamicamente por sessão (quebraria o cache hit).
-- [ ] **(ajustado — risco #5)** Tratar o ganho de cache no subagent explorador como suposição não confirmada, não como fato — validar de verdade na Fase 7 observando se chamadas repetidas ao `fast-context` mostram custo de input menor (cache hit) ou não.
+- [ ] **(solução robusta — risco #5)** Não afirmar o que não foi medido: tratar o ganho de cache no subagent explorador como hipótese até a Fase 7 medir de verdade (invocar `fast-context` duas vezes na mesma sessão, comparar custo de input reportado). Se não houver economia observável, corrigir esta fase pra "não atrapalha o cache do agente principal, mas não garante economia no subagent" em vez de "ativa cache por design".
 
 ## Fase 6 — Feedback visual (statusLine + subagentStatusLine)
 
@@ -74,11 +85,12 @@ Docs de referência para cada fase:
 **Objetivo:** confirmar o ganho de tokens/tempo prometido pela estratégia, mirror do teste que o vídeo de referência fez.
 
 - [ ] Escolher um repositório de teste com múltiplos arquivos/módulos.
-- [ ] **(ajustado — risco #6)** Definir de 5 a 6 queries de teste **fixas** contra esse repositório antes de considerar a Fase 1 "pronta" — não uma pergunta solta e informal. Isso vira o baseline pra qualquer ajuste futuro no system prompt do subagent ser avaliado como melhora ou piora, não só "pareceu melhor".
+- [ ] **(solução robusta — risco #6)** Criar `docs/ai/eval/baseline-queries.md` com 5-6 queries fixas contra esse repositório, cada uma com **gabarito manual** (lista de arquivo:linha conferida à mão, uma vez, com calma). Misturar propositalmente:
+  - queries que **deveriam** disparar o `fast-context` (multi-arquivo/módulo)
+  - queries que **não deveriam** disparar (triviais) — valida o risco #1 (over-triggering) junto
 - [ ] Rodar cada query duas vezes: uma pedindo explicitamente para usar `fast-context`, outra sem (deixando o agente principal explorar direto com Read/Grep/Glob nativos).
-- [ ] Comparar tokens gastos, tempo de resposta (via `/cost` e os resumos `Done (...)`) e se o arquivo/linha certo foi de fato encontrado (não só se voltou uma resposta com aparência de completa — ver risco #3).
-- [ ] Validar o comportamento de limite de turnos (risco #4) e de cache (risco #5) observados na prática.
-- [ ] Registrar o resultado como nota em `docs/ai/` (não precisa ser um doc novo — pode ser uma seção adicionada num dos existentes).
+- [ ] Registrar por rodada, numa tabela datada no mesmo arquivo: tokens (main + subagent), tempo, precisão/recall contra o gabarito, `confidence` reportado vs. corretude real (risco #3), se o limite de turnos segurou (risco #4), se a 2ª chamada mostrou cache hit (risco #5), se queries triviais dispararam delegação indevida (risco #1).
+- [ ] Essa tabela vira o baseline pra qualquer ajuste futuro no system prompt do subagent ser avaliado como melhora ou piora de forma objetiva.
 
 ## Fora de escopo (adiado — ver `context-economy-strategies.md`)
 
