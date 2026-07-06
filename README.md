@@ -76,9 +76,9 @@ No terminal commands needed — just three steps:
 3. **Open (or restart) Claude Code in your project** and start using it
    normally — ContextScout is now active in the background.
 
-Already have a `.claude` folder in your project? Don't overwrite it — ask a
-programmer on your team to merge the two (see
-[For programmers](#for-programmers)).
+Already have a `.claude` folder in your project? Don't replace the whole
+folder — just copy the files from inside it into your existing `.claude`
+folder, without overwriting anything that's already there.
 
 ### How to use it
 
