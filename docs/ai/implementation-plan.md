@@ -21,21 +21,21 @@ Docs de referência para cada fase:
 - [x] Rodar o `validate_citations.py` no resultado de cada chamada ao `fast-context` durante o teste — todas as 22 citações das 3 queries reais passaram (exit code 0, nenhum arquivo/faixa de linha inválido).
 - [x] **Decisão go/no-go: GO.** Camada 2 (hook `PreToolUse`) validada em invocação real numa sessão nova (rodada 3, ver `go-no-go-analysis.md`): query ampla forçou 11 tool calls, o hook negou a 11ª e o subagent emitiu `<final_answer confidence="low">` sozinho, sem nudge manual — resolve o stall silencioso da rodada 2. Critério de sucesso do projeto formalmente redefinido (tokens vs. `Explore` sai, por ser estruturalmente não medível nesta plataforma): zero alucinação de citação, corte real de turnos, robustez a ambiguidade de path, contrato de saída estruturado — os 4 confirmados em uso real. Próximo passo: Fase 2 (escalonamento).
 
-## Fase 1 — Subagent explorador ("discovery") — conteúdo já incorporado na Fase 0 enxuta acima; fases abaixo só avançam se a Fase 0 for aprovada
+## Fase 1 — Subagent explorador ("discovery") ✅ conteúdo incorporado na Fase 0 enxuta e confirmado presente em `fast-context.md`
 
 **Objetivo:** núcleo do projeto — estratégias #4 (isolamento de contexto) + #1 (toggle de modelo).
 
-- [ ] Criar `.claude/agents/fast-context.md` com frontmatter (schema confirmado em `claude-code-capabilities-verified.md`):
+- [x] Criar `.claude/agents/fast-context.md` com frontmatter (schema confirmado em `claude-code-capabilities-verified.md`):
   - `name: fast-context`
   - `description`: instrução pra ativação proativa ("use antes de explorar múltiplos arquivos ou seguir lógica entre módulos")
   - `model: haiku` (valor padrão — confirmado que aceita alias direto, não precisa de ID completo)
   - `tools: Read, Grep, Glob` (sem Edit/Write/Bash — restrição estrutural, não por convenção)
   - `maxTurns: 8` (configurar mesmo sabendo que há bug conhecido de não-enforcement — [issue #41143](https://github.com/anthropics/claude-code/issues/41143) — é grátis e pode ser corrigido numa versão futura; não é o mecanismo principal, ver item de auto-contagem abaixo)
-- [ ] Escrever o system prompt do agent (corpo do arquivo, abaixo do frontmatter), adaptando o `system.md` da referência:
+- [x] Escrever o system prompt do agent (corpo do arquivo, abaixo do frontmatter), adaptando o `system.md` da referência:
   - papel: especialista em exploração read-only
   - guidelines de busca (largo → estreito, múltiplas estratégias de nome, checar convenções diferentes)
   - nunca devolver o histórico de navegação, só o resultado final
-- [ ] **(solução robusta — risco #3)** Contrato de saída estruturado, não texto livre:
+- [x] **(solução robusta — risco #3)** Contrato de saída estruturado, não texto livre:
   ```
   <final_answer confidence="high|medium|low" strategies_used="glob,grep,read" files_found="N">
   /caminho/arquivo.py:10-15
@@ -43,12 +43,12 @@ Docs de referência para cada fase:
   </final_answer>
   ```
   Definir no próprio system prompt os critérios de `confidence`: `high` = achou a definição exata do símbolo perguntado; `medium` = achou arquivos relacionados mas sem match exato ou via padrão amplo; `low` = poucos/nenhum match forte, baseado em suposição de convenção de nome.
-- [ ] **(solução robusta — risco #2)** Grounding por citação literal: exigir um trecho verbatim do arquivo junto de cada `arquivo:linha` (não só o range) — força o subagent a ter lido aquele trecho de fato. Complementar: instruir "antes do `<final_answer>`, faça uma chamada de Read em cada citação pra confirmar que existe e bate com o esperado" (equivalente ao `os.path.isfile` da referência, via tool call real).
-- [ ] **(solução robusta — risco #4, camada 1)** Auto-contagem de turnos no próprio raciocínio: "declare seu turno atual (Turno N/8); ao chegar no 8, você DEVE emitir `<final_answer>` mesmo que incompleto, com `confidence=\"low\"`".
-- [ ] **(solução robusta — risco #8)** Instruir reflection antes de finalizar quando `confidence` for `medium`/`low`: uma segunda passada de auto-crítica ("você checou convenções de nome alternativas? Tem certeza que cobriu todos os casos?") antes de emitir o `<final_answer>` — reduz mas não elimina o viés de excesso de confiança documentado em LLMs.
-- [ ] **(solução robusta — risco #7)** Exigir uma frase curta conectando cada trecho citado à pergunta original ("este trecho resolve X porque Y") — não garante correção semântica, mas força justificativa auditável em vez de citação sem contexto.
-- [ ] **(resolvido — risco #12)** Não precisa de configuração extra: o Grep já respeita `.gitignore` por padrão. Só adicionar no system prompt uma exclusão explícita pra código vendorizado/gerado que tenha sido commitado (não gitignored), se souber de algum caso assim no repo de teste.
-- [ ] Testar com 2-3 queries reais num repositório (ex: "onde fica a lógica de autenticação?") e conferir se o formato estruturado, o grounding e a auto-contagem funcionam como esperado.
+- [x] **(solução robusta — risco #2)** Grounding por citação literal: exigir um trecho verbatim do arquivo junto de cada `arquivo:linha` (não só o range) — força o subagent a ter lido aquele trecho de fato. Complementar: instruir "antes do `<final_answer>`, faça uma chamada de Read em cada citação pra confirmar que existe e bate com o esperado" (equivalente ao `os.path.isfile` da referência, via tool call real).
+- [x] **(solução robusta — risco #4, camada 1)** Auto-contagem de turnos no próprio raciocínio: "declare seu turno atual (Turno N/8); ao chegar no 8, você DEVE emitir `<final_answer>` mesmo que incompleto, com `confidence=\"low\"`".
+- [x] **(solução robusta — risco #8)** Instruir reflection antes de finalizar quando `confidence` for `medium`/`low`: uma segunda passada de auto-crítica ("você checou convenções de nome alternativas? Tem certeza que cobriu todos os casos?") antes de emitir o `<final_answer>` — reduz mas não elimina o viés de excesso de confiança documentado em LLMs.
+- [x] **(solução robusta — risco #7)** Exigir uma frase curta conectando cada trecho citado à pergunta original ("este trecho resolve X porque Y") — não garante correção semântica, mas força justificativa auditável em vez de citação sem contexto.
+- [x] **(resolvido — risco #12)** Não precisa de configuração extra: o Grep já respeita `.gitignore` por padrão. Só adicionar no system prompt uma exclusão explícita pra código vendorizado/gerado que tenha sido commitado (não gitignored), se souber de algum caso assim no repo de teste.
+- [x] Testado com 2-3 queries reais num repositório (ex: "onde fica a lógica de autenticação?") e conferido se o formato estruturado, o grounding e a auto-contagem funcionam como esperado — coberto nas rodadas 1-4 (`go-no-go-analysis.md`) e no baseline da Fase 7.
 
 ## Fase 2 — Ativação explícita e regras ✅ implementada
 
@@ -71,12 +71,12 @@ Docs de referência para cada fase:
 - [ ] Calibração ao longo do tempo: fica pra Fase 7 (precisa de gabarito manual acumulado, não faz sentido antecipar com N=poucas queries).
 - [x] **Bug real encontrado e corrigido durante o teste de escalonamento** (rodada 4, ver `go-no-go-analysis.md`): o contador do `limit_turns_hook.py` usava `transcript_path`/`session_id` como chave, mas esses campos são **os mesmos em toda invocação de subagent dentro da sessão** (confirmado via hook de debug temporário) — contagem vazava entre chamadas separadas do `fast-context`, cortando cada vez mais cedo a cada nova invocação na mesma sessão. Corrigido pra usar `agent_id` (único por invocação, confirmado que bate com o `agentId` da ferramenta `Agent`). Validado com teste sintético: duas invocações com `agent_id` diferentes mas mesmo `session_id`/`transcript_path` mantêm contadores isolados.
 
-## Fase 4 — Limite de turnos e caps de saída
+## Fase 4 — Limite de turnos e caps de saída ✅ implementada
 
 **Objetivo:** estratégia #6 (cap de tamanho de saída) e prevenção de loop de busca gastando tokens à toa.
 
-- [ ] No system prompt do subagent, instruir explicitamente: preferir `head_limit`/ranges pequenos nas ferramentas nativas de Grep/Read, nunca despejar arquivo inteiro quando uma faixa resolve.
-- [ ] Camada 1 (auto-contagem de turnos) já entra na Fase 1, junto com `maxTurns: 8` no frontmatter (mesmo sabendo do bug de não-enforcement).
+- [x] No system prompt do subagent, instruído explicitamente: preferir `head_limit`/ranges pequenos nas ferramentas nativas de Grep/Read, nunca despejar arquivo inteiro quando uma faixa resolve (`.claude/agents/fast-context.md:24`).
+- [x] Camada 1 (auto-contagem de turnos) já entra na Fase 1, junto com `maxTurns: 8` no frontmatter (mesmo sabendo do bug de não-enforcement).
 - [x] **(solução robusta — risco #4, camada 2)** Implementado antes do previsto: a Fase 0/rodada 2 já mostrou a Camada 1 (soft) falhar 1 em 3 vezes reais (stall silencioso sem `<final_answer>`), então a condição original ("só implementar se a Fase 7 mostrar falha") foi satisfeita antecipadamente. `.claude/scripts/limit_turns_hook.py` conta invocações de `Read|Grep|Glob` por invocação de subagent (chave = `transcript_path`, único por execução) e nega via `permissionDecision: "deny"` a partir da 11ª chamada. Configurado em `hooks.PreToolUse` no frontmatter do `fast-context.md`. **Validado em sessão nova com invocação real** (rodada 3, ver `go-no-go-analysis.md`): 11 tool calls, corte confirmado, `<final_answer confidence="low">` emitido sem nudge manual.
 
 ## Fase 5 — Prompt caching por estrutura ✅ concluída (conclusão negativa — cache no subagent não é medível/observável)
