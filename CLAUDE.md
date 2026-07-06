@@ -18,6 +18,8 @@ Projeto ainda não implementado — este é o setup inicial do repositório. Sta
 
 Plano de estratégias de economia de contexto a implementar: ver `docs/ai/context-economy-strategies.md`.
 
+Decisão de arquitetura (só Claude, sem infra externa, tudo nativo do Claude Code): ver `docs/ai/architecture-decision-native-subagent.md`.
+
 ## Regras
 
 - Sem segredos/credenciais em nenhum arquivo commitado.
