@@ -103,15 +103,20 @@ Docs de referência para cada fase:
 
 **Objetivo:** confirmar o ganho de tokens/tempo prometido pela estratégia, mirror do teste que o vídeo de referência fez.
 
-- [ ] Escolher um repositório de teste com múltiplos arquivos/módulos.
-- [ ] **(solução robusta — risco #6)** Criar `docs/ai/eval/baseline-queries.md` com 5-6 queries fixas contra esse repositório, cada uma com **gabarito manual** (lista de arquivo:linha conferida à mão, uma vez, com calma). Misturar propositalmente:
-  - queries que **deveriam** disparar o `fast-context` (multi-arquivo/módulo)
-  - queries que **não deveriam** disparar (triviais) — valida o risco #1 (over-triggering) junto
-- [ ] Rodar cada query duas vezes: uma pedindo explicitamente para usar `fast-context`, outra sem (deixando o agente principal explorar direto com Read/Grep/Glob nativos).
-- [ ] Registrar por rodada, numa tabela datada no mesmo arquivo: tokens (main + subagent), tempo, precisão/recall contra o gabarito, `confidence` reportado vs. corretude real (risco #3/#8), se o limite de turnos segurou (risco #4), se a 2ª chamada mostrou cache hit (risco #5), se queries triviais dispararam delegação indevida (risco #1), se uma pergunta de follow-up re-disparou delegação desnecessária (risco #15).
-- [ ] **(risco #10)** Conferir se `fast-context.md` e `fast-context-deep.md` ainda estão sincronizados (mesmo corpo, só `model:` diferente) antes de fechar a rodada.
-- [ ] **(risco #11)** Documentar explicitamente esse baseline como "smoke test" contra um repositório só — não é prova de generalização pra outros projetos/linguagens. Expandir a amostra é trabalho futuro fora desta fase.
-- [ ] Essa tabela vira o baseline pra qualquer ajuste futuro no system prompt do subagent ser avaliado como melhora ou piora de forma objetiva.
+- [x] Repositório de teste: `/mnt/backup/github/fastcontext` (já usado nas rodadas 1-4, gabarito fácil de conferir à mão).
+- [x] **(solução robusta — risco #6)** Criado `docs/ai/eval/baseline-queries.md`: 4 queries que deveriam disparar (Q1-Q4, multi-arquivo) + 2 triviais que não deveriam (Q5-Q6), cada uma com gabarito conferido manualmente por leitura direta.
+- [x] Rodado Q1-Q4 em modo "com delegação" (fast-context real) e "sem delegação" (agente principal direto); Q5-Q6 em modo natural. Resultados em `docs/ai/eval/baseline-results-2026-07-06.md`.
+- [x] Tabela de resultados registrada com tokens/tool_uses/duração/acerto contra gabarito por query.
+- [x] **(risco #10)** Confirmado: `fast-context.md` e `fast-context-deep.md` seguem com corpo idêntico, só `name`/`description`/`model` diferentes.
+- [x] **(risco #11)** Aviso de escopo explícito no `baseline-queries.md`: smoke test contra 1 repositório Python pequeno, não é prova de generalização.
+- [x] Baseline registrado — pode servir de referência pra avaliar futuras mudanças no system prompt do subagent.
+
+**Achados da Fase 7** (detalhe completo em `baseline-results-2026-07-06.md`):
+1. **3 de 4 queries "deveria disparar" tiveram citação verbatim correta e completa**, às vezes indo além do gabarito com contexto relevante adicional (Q2, Q4) — mantém o sinal de qualidade das rodadas anteriores.
+2. **Zero over-triggering** (risco #1): as 2 queries triviais (Q5-Q6) não dispararam delegação indevida — o agente principal reconheceu corretamente os dois casos de "não usar".
+3. **Achado negativo importante, revisa uma conclusão da rodada 2**: Q3 falhou — o `fast-context` respondeu sobre o repositório errado (`fastContext`, este projeto, em vez de `fastcontext`, o repo de referência) por confusão de case no path, **com `confidence="high"`**. Isso mostra que o erro de ambiguidade de path (rodada 2, achado #3, atribuído só ao `Explore` nativo) **também ocorre no `fast-context`** — a vantagem de robustez relatada antes não se sustenta numa amostra maior. Critério de sucesso #3 da Fase 0 (`go-no-go-analysis.md`) fica revisado: não é uma vantagem confiável do `fast-context`.
+4. **Risco #3/#8 (calibração de confidence) confirmado como não mitigado**: a falha do item 3 veio com `confidence="high"`, não `medium`/`low` — a auto-crítica instruída só dispara nos dois últimos casos, então não pegou esse erro. A defesa em profundidade (ler ao menos uma citação antes de editar, já em `exploration.md`) continua sendo a mitigação real, não a auto-avaliação do subagent.
+5. **Comparação "com/sem delegação" ficou metodologicamente inconclusiva**: o agente principal já tinha lido os arquivos relevantes nesta sessão (pra montar o gabarito), então "sem delegação" não partiu do zero — registrado como limitação do baseline, não como resultado.
 
 ## Fora de escopo (adiado — ver `context-economy-strategies.md`)
 

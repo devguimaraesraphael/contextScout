@@ -99,7 +99,7 @@ O sinal de qualidade continua bom, e a robustez a ambiguidade de path é um pont
 **Critério de sucesso do projeto redefinido**: "economia de tokens vs. `Explore` nativo" sai como métrica de decisão (inviável — plataforma não expõe usage do `Explore`). Critérios que ficam, porque foram de fato observados e são medíveis:
 1. Zero alucinação nas citações (`validate_citations.py` como gate objetivo) — confirmado nas rodadas 1 e 2.
 2. Corte de turnos real (não comportamental) — implementado acima, falta validar em sessão nova.
-3. Robustez a ambiguidade de path/contexto — vantagem observada 1x sobre o `Explore`, amostra pequena, repetir antes de generalizar.
+3. ~~Robustez a ambiguidade de path/contexto~~ — **revisado na Fase 7 (rodada 5, ver `eval/baseline-results-2026-07-06.md`)**: numa amostra maior (Q3 do baseline), o `fast-context` cometeu o mesmo tipo de erro de path (respondeu sobre o repositório errado, `fastContext` em vez de `fastcontext`, com `confidence="high"`) que a rodada 2 tinha atribuído só ao `Explore`. Não é uma vantagem confiável — removido como critério de sucesso.
 4. Contrato de saída estruturado (`confidence`) útil pra escalonamento — funcionou nas 6 chamadas reais até agora (proxy + subagent real).
 
 Com isso, a decisão go/no-go das Fases 2-7 passa a depender de validar o hook numa sessão nova e, se ele segurar de verdade, o "go" fica justificado pelos critérios 1-4 acima — não pela hipótese original de economia de tokens, que fica formalmente descartada como métrica deste projeto.
