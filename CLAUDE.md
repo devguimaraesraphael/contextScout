@@ -2,7 +2,7 @@
 
 Reimplementação do conceito **FastContext** (originalmente `microsoft/fastcontext`, hoje indisponível publicamente): um subagent/skill dedicado a explorar um repositório de código e devolver só o trecho relevante (arquivo + intervalo de linhas) para o agente principal, em vez de deixar o agente principal gastar tokens fazendo grep/glob/leitura de arquivo diretamente.
 
-Referência de contexto: `transcricao-video-fastcontext.md` (transcrição de vídeo explicando o projeto original).
+Referência de contexto: `transcricao-video-fastcontext.md` (transcrição de vídeo explicando o projeto original) e `docs/ai/reference-implementation-fastcontext.md` (discovery de uma implementação de referência em Python, clonada em `/mnt/backup/github/fastcontext`, fora deste repo).
 
 ## Ideia central
 

@@ -54,3 +54,17 @@ Fonte: [Context engineering: LLM evolution for agentic AI — Elastic Search Lab
 ## Poda de transcript (bônus, não contada nas 5 principais)
 
 Descartar do histórico do agente principal chamadas de ferramenta antigas que não são mais referenciadas, evitando que o contexto cresça sem necessidade ao longo de uma sessão longa.
+
+## Cap de tamanho de saída das ferramentas (encontrado na implementação de referência)
+
+**Status: não implementado.**
+
+A implementação de referência (`Cirius1792/fastcontext`, ver `docs/ai/reference-implementation-fastcontext.md`) limita agressivamente o tamanho da resposta de cada tool call, independente de quantos tokens o modelo "pediria":
+
+- `Read`: máximo 2000 linhas e 2000 caracteres por linha.
+- `Grep`: máximo 100 linhas de resultado.
+- `Glob`: máximo 100 arquivos.
+
+Isso evita que uma única chamada de ferramenta explosiva (grep genérico demais, arquivo enorme) estoure sozinha o orçamento de contexto do turno, independente de qualquer outra estratégia de delegação.
+
+Fonte: `docs/ai/reference-implementation-fastcontext.md` (código-fonte lido em `src/fastcontext/agent/tool/{read,grep,glob}.py`)
