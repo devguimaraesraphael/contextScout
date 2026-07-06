@@ -6,12 +6,14 @@ quebrada em outro lugar).
 
 ## Quando usar
 
-- Localização do código relevante é desconhecida.
-- A lógica atravessa mais de 2 arquivos/módulos.
-- Pergunta do tipo "como funciona X" sobre comportamento não visível no contexto atual.
-- Análise de impacto ("o que quebra se eu mudar Y").
+Só perguntas **pontuais e fechadas** — escopo testado e com boa taxa de acerto:
 
-Exemplo: "onde fica a lógica de autenticação?" → localização desconhecida, delega.
+- Localizar a definição de um símbolo/função/classe específico cujo arquivo é desconhecido.
+- Achar onde uma lógica específica mora, quando ela atravessa 2-4 arquivos/módulos.
+- Pergunta fechada tipo "como funciona X" sobre um comportamento específico e nomeável, não visível no contexto atual.
+- Análise de impacto pontual ("o que quebra se eu mudar a assinatura de Y").
+
+Exemplo: "onde fica a função que valida o token JWT?" → localização desconhecida, escopo fechado, delega.
 
 ## Quando NÃO usar
 
@@ -19,8 +21,10 @@ Exemplo: "onde fica a lógica de autenticação?" → localização desconhecida
 - É um grep único num arquivo já conhecido.
 - É edição pura, sem exploração (símbolo exato já visível no contexto atual).
 - A pergunta já foi respondida nesta conversa (citação anterior cobre o caso).
+- **Pergunta ampla/aberta tipo "descreva todo o fluxo passo a passo", "explique tudo sobre X", "liste cada arquivo relacionado a Y"** — risco confirmado e reproduzido (3/3) de estouro de turno sem fechar `<final_answer>`, não corrigível só com instrução no prompt (ver `docs/ai/risks-and-gaps.md`, risco #4). Se precisar desse tipo de visão geral, quebre em 2-3 perguntas pontuais sequenciais e delegue cada uma separadamente, ou explore você mesmo.
 
 Exemplo: "muda o nome dessa variável na linha 42 que acabei de ler" → não delega, edita direto.
+Exemplo: "descreva com calma todo o fluxo de autenticação, citando cada arquivo relevante" → não delega assim; quebre em "onde começa o fluxo de autenticação" + "o que acontece depois de X validar o token", cada uma delegada separadamente.
 
 ## Gate de auto-checagem obrigatório antes de delegar
 
@@ -28,11 +32,15 @@ Antes de invocar `fast-context`, pergunte-se explicitamente:
 1. Eu já sei o arquivo:linha exato pra isso? Se sim, pula a delegação.
 2. Eu já respondi isso nesta conversa? Se sim, reusa a citação anterior em vez de re-disparar.
 
-## Defesa em profundidade (risco #2)
+## Defesa em profundidade (risco #2 e #3 — obrigatória, sem exceção por confidence)
 
-Antes de editar em cima de uma citação recebida do `fast-context`, sempre fazer
-uma leitura rápida (Read) de pelo menos uma das citações pra confirmar que
-o trecho existe e bate com o esperado — não confiar 100% no grounding do subagent.
+Antes de editar ou responder ao usuário em cima de uma citação recebida do
+`fast-context`, sempre fazer uma leitura rápida (Read) de pelo menos uma das
+citações pra confirmar que o trecho existe e bate com o esperado — **mesmo
+quando `confidence="high"`**. Achado real (baseline Fase 7, Q3): o subagent
+respondeu com `confidence="high"` sobre o repositório errado — confiança
+autorrelatada não pega o próprio erro. Não pular essa checagem por causa de
+confiança alta; é exatamente o caso em que ela falhou.
 
 ## Escalonamento de modelo (risco #3, #9, #10)
 

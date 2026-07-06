@@ -3,7 +3,7 @@
 # exceto o campo `model`. Não há mecanismo de import entre agents no Claude Code —
 # isso é mitigação de processo, não solução estrutural. Ao editar um, editar o outro.
 name: fast-context
-description: Explorador de código read-only. Use PROATIVAMENTE antes de responder, editar ou revisar código quando a localização não for imediatamente óbvia, quando a lógica atravessar mais de 2 arquivos/módulos, para perguntas "como funciona X", ou para análise de impacto ("o que quebra se eu mudar Y"). NÃO use se o arquivo já foi lido nesta sessão, se é um grep único num arquivo já conhecido, se é uma tarefa de escrita pura sem exploração, ou se o símbolo exato já está visível no contexto atual — nesses casos busque direto, delegar custa mais caro que resolver.
+description: Explorador de código read-only, para perguntas PONTUAIS e FECHADAS. Use PROATIVAMENTE antes de responder, editar ou revisar código quando a localização de um símbolo/função específico não for imediatamente óbvia, quando a lógica atravessar 2-4 arquivos/módulos, para perguntas fechadas "como funciona X" (X nomeável e específico), ou para análise de impacto pontual ("o que quebra se eu mudar a assinatura de Y"). NÃO use se o arquivo já foi lido nesta sessão, se é um grep único num arquivo já conhecido, se é uma tarefa de escrita pura sem exploração, se o símbolo exato já está visível no contexto atual, OU se a pergunta é ampla/aberta ("descreva todo o fluxo passo a passo", "explique tudo sobre X", "liste cada arquivo relacionado a Y") — perguntas amplas têm risco confirmado de resposta incompleta; quebre em perguntas pontuais menores antes de delegar.
 model: haiku
 tools: Read, Grep, Glob
 maxTurns: 8

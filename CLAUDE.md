@@ -1,6 +1,6 @@
 # fastContext
 
-Reimplementação do conceito **FastContext** (originalmente `microsoft/fastcontext`, hoje indisponível publicamente): um subagent/skill dedicado a explorar um repositório de código e devolver só o trecho relevante (arquivo + intervalo de linhas) para o agente principal, em vez de deixar o agente principal gastar tokens fazendo grep/glob/leitura de arquivo diretamente.
+Reimplementação do conceito **FastContext** (originalmente `microsoft/fastcontext`, hoje indisponível publicamente): um subagent dedicado a explorar um repositório de código e devolver só o trecho relevante (arquivo + intervalo de linhas) para o agente principal, em vez de deixar o agente principal gastar contexto fazendo grep/glob/leitura de arquivo diretamente.
 
 Referência de contexto: `transcricao-video-fastcontext.md` (transcrição de vídeo explicando o projeto original) e `docs/ai/reference-implementation-fastcontext.md` (discovery de uma implementação de referência em Python, clonada em `/mnt/backup/github/fastContextMicrosoft`, fora deste repo).
 
@@ -8,9 +8,27 @@ Referência de contexto: `transcricao-video-fastcontext.md` (transcrição de v�
 
 - Dois agentes separados: um **explorador** (busca) e um **resolvedor** (edita/decide).
 - O explorador só tem 3 ferramentas: leitura de arquivo (com número de linha), glob e grep/regex. Não executa nada.
-- O explorador roda em contexto isolado e pode usar um modelo mais barato/local — quem resolve a tarefa usa o modelo mais caro.
+- O explorador roda em contexto isolado e usa um modelo mais barato (Haiku) — quem resolve a tarefa usa o modelo mais caro.
 - Saída do explorador: bloco enxuto de evidência (arquivo + linhas), nunca o histórico de navegação.
-- Ativação no Claude Code via skill — pode ser implícita, via slash command, ou explícita citando o nome no prompt (a explícita é a mais confiável).
+- Ativação via `.claude/rules/exploration.md` — explícita (citar o nome no prompt) é mais confiável que implícita.
+
+## Escopo revisado — só o que está garantido por evidência real
+
+Depois de 7 fases + validação de baseline + achados negativos corrigidos, a proposta de valor foi **reduzida deliberadamente** ao que os testes realmente sustentam. Ver `docs/ai/risks-and-gaps.md` e `docs/ai/eval/baseline-results-2026-07-06.md` para o detalhe de cada item abaixo.
+
+**Garantido (testado, reproduzido):**
+- Redução de **custo em dólar**, não de contagem de tokens — Haiku custa uma fração do modelo principal por token. Contagem de tokens vs. explorar direto é estruturalmente inverificável nesta plataforma (Agent tool não expõe usage comparável); não afirmamos "menos tokens", só "tokens mais baratos" quando a delegação acontece.
+- Higiene de contexto do agente principal: histórico de busca (tentativas erradas, convenções de nome descartadas) fica isolado no subagent e nunca entra no contexto do modelo caro.
+- Zero over-triggering nas queries triviais testadas (baseline Q5/Q6) — a regra de ativação não dispara para lookup já resolvido ou edição pura.
+- Contrato de saída estruturado com citação verbatim, validado (`validate_citations.py`) contra todas as citações reais coletadas até agora.
+- Corte real de tool calls via hook `PreToolUse` (Camada 2) — não depende só de instrução no prompt.
+- Bloqueio de segredos (`.env`, `secrets/**`) testado com casos sintéticos positivos e negativos.
+- Boa qualidade de resposta **para perguntas pontuais e fechadas** (localizar um símbolo, achar a definição de uma função, mapear 2-4 arquivos relacionados) — 3 de 4 casos do baseline, incluindo contexto além do gabarito.
+
+**Não garantido — riscos conhecidos, sem mitigação na origem (usar com essas restrições):**
+- **Calibração de confiança falha silenciosamente**: já ocorreu resposta `confidence="high"` sobre o repositório/arquivo errado. Defesa obrigatória: sempre ler ao menos uma citação antes de agir em cima dela (`.claude/rules/exploration.md`) — não confiar no `confidence` autorrelatado.
+- **Perguntas amplas e abertas ("descreva todo o fluxo, citando cada arquivo") estouram o turno sem fechar `<final_answer>`** — reproduzido 3/3 vezes, não corrigido por ajuste de prompt. Não delegar perguntas desse formato; quebrar em perguntas pontuais menores (ver `exploration.md`).
+- Robustez a ambiguidade de path/case **não é uma vantagem confiável** do `fast-context` sobre explorar direto — ambos os lados cometem esse erro (revisão do achado da rodada 2 após amostra maior).
 
 ## Status
 
