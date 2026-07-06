@@ -1,0 +1,6 @@
+# Claude - arquivos pessoais
+CLAUDE.local.md
+.claude/settings.local.json
+
+# Sessões e memória automática (gerado pelo Claude Code)
+.claude/projects/
